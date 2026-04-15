@@ -1,6 +1,5 @@
 import React from 'react';
 import { CheckCircle2, XCircle, Info, AlertTriangle } from 'lucide-react';
-import { useAppContext } from '../../context/useAppContext';
 
 const VARIANTS = {
   success: {
@@ -25,8 +24,7 @@ const VARIANTS = {
   },
 };
 
-export const Toast = () => {
-  const { toast } = useAppContext();
+export const Toast = ({ toast }) => {
   if (!toast) return null;
 
   const v = VARIANTS[toast.type] || VARIANTS.success;

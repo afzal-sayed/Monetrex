@@ -42,3 +42,9 @@ Thumbs.db
 # Vite / local dev
 *.local
 .cache
+
+# Graphify — generated knowledge graph
+graphify-out/cache/
+graphify-out/*.bak
+graphify-out/.graphify_*
+graphify-out/obsidian/

@@ -11,6 +11,7 @@
     "server": "node server/index.js"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "autoprefixer": "^10.4.27",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^11.10.0",
