@@ -1,0 +1,244 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "email": "alex@monetrex.io",
+      "name": "Alex Doe",
+      "password": "password123",
+      "avatar": "https://i.pravatar.cc/150?u=alex",
+      "theme": "dark",
+      "notifications": true,
+      "weeklyReport": true,
+      "role": "Owner"
+    },
+    {
+      "id": "2",
+      "name": "afzal newa",
+      "email": "afzal.c@codilar.com",
+      "password": "afzal123",
+      "avatar": "https://i.pravatar.cc/150?u=afzal.c@codilar.com",
+      "theme": "dark",
+      "notifications": true,
+      "weeklyReport": false,
+      "role": "Member"
+    }
+  ],
+  "groups": [
+    {
+      "id": "g1",
+      "name": "Doe Family",
+      "ownerId": "1"
+    },
+    {
+      "id": "g-mnpviits",
+      "name": "new hu",
+      "ownerId": "1"
+    },
+    {
+      "id": "g-mnpvkp23",
+      "name": "test",
+      "ownerId": "2"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "1",
+      "title": "Grocery Run - Whole Foods",
+      "amount": -142.5,
+      "category": "Food",
+      "date": "Today, 10:42 AM",
+      "icon": "Wallet",
+      "memberId": "1",
+      "groupId": "g1"
+    },
+    {
+      "id": "2",
+      "title": "Freelance Client Payout",
+      "amount": 2400,
+      "category": "Income",
+      "date": "Yesterday",
+      "icon": "Activity",
+      "memberId": "1",
+      "groupId": "g1"
+    },
+    {
+      "id": "4",
+      "title": "Uber Ride",
+      "amount": -24.5,
+      "category": "Transport",
+      "date": "Oct 12",
+      "icon": "Activity",
+      "memberId": "1",
+      "groupId": "g1"
+    },
+    {
+      "id": "5",
+      "title": "Coffee Shop",
+      "amount": -4.5,
+      "category": "Food",
+      "date": "Oct 12",
+      "icon": "Activity",
+      "memberId": "3",
+      "groupId": "g1"
+    },
+    {
+      "id": "6",
+      "title": "Salary Deposit",
+      "amount": 5200,
+      "category": "Income",
+      "date": "Oct 1",
+      "icon": "Wallet",
+      "memberId": "1",
+      "groupId": "g1"
+    },
+    {
+      "id": "7",
+      "title": "Electric Bill",
+      "amount": -89,
+      "category": "Housing",
+      "date": "Sep 28",
+      "icon": "Activity",
+      "memberId": "1",
+      "groupId": "g1"
+    },
+    {
+      "title": "lunch",
+      "amount": -187,
+      "category": "Food",
+      "icon": "Activity",
+      "id": "mnpsjkhi",
+      "date": "Apr 8, 2026",
+      "memberId": "1",
+      "groupId": "g1"
+    },
+    {
+      "title": "thali and lassi",
+      "amount": -187,
+      "category": "Food",
+      "icon": "Activity",
+      "id": "mnpsk6gq",
+      "date": "Apr 8, 2026",
+      "memberId": "1",
+      "groupId": "g1"
+    },
+    {
+      "title": "salary",
+      "amount": 4999,
+      "category": "Income",
+      "icon": "Activity",
+      "id": "mnpslkur",
+      "date": "Apr 8, 2026",
+      "memberId": "1",
+      "groupId": "g1"
+    },
+    {
+      "id": "fam-sarah-1",
+      "title": "Amazon Shopping",
+      "amount": -245,
+      "category": "General",
+      "date": "Apr 5, 2026",
+      "icon": "Activity",
+      "memberId": "2",
+      "groupId": "g1"
+    },
+    {
+      "id": "fam-sarah-2",
+      "title": "Gym Membership",
+      "amount": -50,
+      "category": "Entertainment",
+      "date": "Apr 1, 2026",
+      "icon": "Activity",
+      "memberId": "2",
+      "groupId": "g1"
+    },
+    {
+      "id": "fam-mike-1",
+      "title": "School Lunch",
+      "amount": -12,
+      "category": "Food",
+      "date": "Apr 7, 2026",
+      "icon": "Activity",
+      "memberId": "3",
+      "groupId": "g1"
+    },
+    {
+      "id": "fam-mike-2",
+      "title": "Bus Pass",
+      "amount": -45,
+      "category": "Transport",
+      "date": "Apr 1, 2026",
+      "icon": "Activity",
+      "memberId": "3",
+      "groupId": "g1"
+    },
+    {
+      "id": "fam-mike-3",
+      "title": "Pocket Money",
+      "amount": 200,
+      "category": "Income",
+      "date": "Apr 1, 2026",
+      "icon": "Wallet",
+      "memberId": "3",
+      "groupId": "g1"
+    }
+  ],
+  "family": [
+    {
+      "id": "1",
+      "name": "Alex Doe",
+      "role": "Owner",
+      "limit": null,
+      "spent": 0,
+      "email": "alex@monetrex.io",
+      "groupId": "g1",
+      "userId": "1"
+    },
+    {
+      "id": "2",
+      "name": "Sarah Doe",
+      "role": "Member",
+      "limit": 1000,
+      "spent": 0,
+      "email": "sarah@monetrex.io",
+      "groupId": "g1"
+    },
+    {
+      "id": "3",
+      "name": "Mike Doe",
+      "role": "Member",
+      "limit": 500,
+      "spent": 0,
+      "email": "mike@monetrex.io",
+      "groupId": "g1"
+    },
+    {
+      "id": "m-mnpviits",
+      "groupId": "g-mnpviits",
+      "userId": "1",
+      "name": "af",
+      "email": "alex@monetrex.io",
+      "role": "Owner",
+      "limit": null,
+      "spent": 0
+    },
+    {
+      "name": "afzal",
+      "email": "afzal.c@codilar.com",
+      "role": "Member",
+      "limit": 500,
+      "id": "mnpvit58",
+      "groupId": "g-mnpviits",
+      "spent": 0
+    },
+    {
+      "id": "m-mnpvkp23",
+      "groupId": "g-mnpvkp23",
+      "userId": "2",
+      "name": "afzal newa",
+      "email": "afzal.c@codilar.com",
+      "role": "Owner",
+      "limit": null,
+      "spent": 0
+    }
+  ]
+}
