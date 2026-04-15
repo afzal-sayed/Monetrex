@@ -60,28 +60,36 @@ const AuthRoute = ({ children }) => {
   return user ? <Navigate to="/dashboard" replace /> : children;
 };
 
+// ─── Inner app — needs to be inside AppProvider to read toast state ──────────
+function AppInner() {
+  const { toast } = useAppContext();
+  return (
+    <div className="bg-bg-light dark:bg-bg-dark min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-300">
+      <BrowserRouter>
+        <Routes>
+          <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
+          <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard"    element={<Dashboard />}    />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/analytics"    element={<Analytics />}    />
+            <Route path="/family"       element={<Family />}       />
+            <Route path="/settings"     element={<Settings />}     />
+          </Route>
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </BrowserRouter>
+      <Toast toast={toast} />
+    </div>
+  );
+}
+
 // ─── App ─────────────────────────────────────────────────────────────────────
 function App() {
   return (
     <ErrorBoundary>
       <AppProvider>
-        <div className="bg-bg-light dark:bg-bg-dark min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-300">
-          <BrowserRouter>
-            <Routes>
-              <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
-              <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-                <Route index element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard"    element={<Dashboard />}    />
-                <Route path="/transactions" element={<Transactions />} />
-                <Route path="/analytics"    element={<Analytics />}    />
-                <Route path="/family"       element={<Family />}       />
-                <Route path="/settings"     element={<Settings />}     />
-              </Route>
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </Routes>
-          </BrowserRouter>
-          <Toast />
-        </div>
+        <AppInner />
       </AppProvider>
     </ErrorBoundary>
   );

@@ -4,12 +4,12 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import {
   Search, Download, Trash2, Edit2, Plus, FileSpreadsheet,
-  FileJson, ArrowUpDown, ArrowUp, ArrowDown, Repeat,
+  FileJson, ArrowUpDown, ArrowUp, ArrowDown, Repeat, Filter,
 } from 'lucide-react';
 import { useAppContext } from '../context/useAppContext';
 import { AddExpenseModal } from '../components/features/AddExpenseModal';
 import { exportToCSV, exportToJSON } from '../utils/export';
-import { formatDate, CATEGORY_COLORS } from '../utils/helpers';
+import { formatDate, CATEGORY_COLORS, CATEGORY_EMOJI } from '../utils/helpers';
 
 const SortIcon = ({ field, sortBy, dir }) => {
   if (sortBy !== field) return <ArrowUpDown size={13} className="text-slate-400" />;
@@ -21,11 +21,12 @@ const SortIcon = ({ field, sortBy, dir }) => {
 export const Transactions = () => {
   const { transactions, family, isLoading, deleteTransaction, showToast, isAdmin } = useAppContext();
 
-  const [searchTerm,    setSearchTerm]    = useState('');
+  const [searchTerm,     setSearchTerm]     = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [memberFilter,   setMemberFilter]   = useState('All');
   const [isModalOpen,    setIsModalOpen]    = useState(false);
   const [showExport,     setShowExport]     = useState(false);
+  const [showFilters,    setShowFilters]    = useState(false);
   const [editingTxn,     setEditingTxn]     = useState(null);
   const [sortBy,         setSortBy]         = useState('date');
   const [sortDir,        setSortDir]        = useState('desc');
@@ -34,7 +35,6 @@ export const Transactions = () => {
 
   const exportRef = useRef(null);
 
-  // Close export dropdown on outside click
   useEffect(() => {
     if (!showExport) return;
     const handler = (e) => {
@@ -44,7 +44,6 @@ export const Transactions = () => {
     return () => document.removeEventListener('mousedown', handler);
   }, [showExport]);
 
-  // Reset page on filter change (deferred to avoid setState-in-render warning)
   const prevFilters = React.useRef({ searchTerm, categoryFilter, memberFilter, sortBy, sortDir });
   React.useLayoutEffect(() => {
     const prev = prevFilters.current;
@@ -88,8 +87,7 @@ export const Transactions = () => {
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
   const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-
-  const netTotal = filtered.reduce((s, t) => s + t.amount, 0);
+  const netTotal   = filtered.reduce((s, t) => s + t.amount, 0);
 
   const handleExport = (type) => {
     if (filtered.length === 0) { showToast('No transactions to export', 'error'); return; }
@@ -116,6 +114,8 @@ export const Transactions = () => {
     }
   };
 
+  const activeFilterCount = (categoryFilter !== 'All' ? 1 : 0) + (memberFilter !== 'All' ? 1 : 0);
+
   if (isLoading) {
     return (
       <div className="space-y-5">
@@ -128,18 +128,20 @@ export const Transactions = () => {
 
   return (
     <div className="space-y-5 animate-fade-up">
-      <header className="flex items-center justify-between gap-4">
+      {/* ── Header ── */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Transactions</h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">View and manage all financial activity</p>
         </div>
-        <div className="flex gap-2.5">
+        <div className="flex gap-2 shrink-0">
           <div className="relative" ref={exportRef}>
             <Button variant="glass" className="gap-2" onClick={() => setShowExport((v) => !v)}>
-              <Download size={15} /> Export
+              <Download size={15} />
+              <span className="hidden sm:inline">Export</span>
             </Button>
             {showExport && (
-              <div className="absolute right-0 mt-2 w-48 rounded-xl glass-panel bg-white/95 dark:bg-slate-900/95 border border-slate-200/60 dark:border-white/10 shadow-2xl z-50 animate-fade-up overflow-hidden">
+              <div className="absolute right-0 mt-2 w-44 rounded-xl bg-white/95 dark:bg-slate-900/95 border border-slate-200/60 dark:border-white/10 shadow-2xl z-50 animate-fade-up overflow-hidden">
                 <button
                   onClick={() => handleExport('csv')}
                   className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors"
@@ -156,28 +158,50 @@ export const Transactions = () => {
             )}
           </div>
           <Button variant="primary" className="gap-2" onClick={openNew}>
-            <Plus size={15} /> New
+            <Plus size={15} /> <span className="hidden sm:inline">New</span><span className="sm:hidden">Add</span>
           </Button>
         </div>
       </header>
 
       <Card glass>
-        {/* Filters */}
+        {/* ── Filters ── */}
         <div className="p-4 border-b border-slate-200/60 dark:border-white/[0.06] space-y-3">
-          <div className="flex flex-col sm:flex-row gap-3">
+          {/* Search row */}
+          <div className="flex gap-2">
             <div className="flex-1">
               <Input
                 icon={Search}
-                placeholder="Search by title or note…"
+                placeholder="Search transactions…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            {/* Mobile: collapsible filter toggle */}
+            <button
+              onClick={() => setShowFilters((v) => !v)}
+              className={`md:hidden relative flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors ${
+                showFilters || activeFilterCount > 0
+                  ? 'bg-primary/10 border-primary/30 text-primary'
+                  : 'bg-slate-50 dark:bg-white/[0.05] border-slate-200/50 dark:border-white/10 text-slate-600 dark:text-slate-300'
+              }`}
+            >
+              <Filter size={15} />
+              {activeFilterCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary text-white text-[9px] flex items-center justify-center font-bold">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Desktop: always-visible filters / Mobile: collapsible */}
+          <div className={`space-y-3 ${showFilters ? 'block' : 'hidden md:block'}`}>
+            {/* Member filter (admin only) */}
             {isAdmin && family.length > 0 && (
               <select
                 value={memberFilter}
                 onChange={(e) => setMemberFilter(e.target.value)}
-                className="px-3 py-2 rounded-xl text-sm font-medium bg-slate-50 dark:bg-white/[0.05] text-slate-700 dark:text-slate-200 border border-slate-200/50 dark:border-white/10 outline-none focus:border-primary transition-colors"
+                className="w-full md:w-auto px-3 py-2 rounded-xl text-sm font-medium bg-slate-50 dark:bg-white/[0.05] text-slate-700 dark:text-slate-200 border border-slate-200/50 dark:border-white/10 outline-none focus:border-primary transition-colors"
               >
                 <option value="All">All Members</option>
                 {family.map((m) => (
@@ -185,42 +209,45 @@ export const Transactions = () => {
                 ))}
               </select>
             )}
-          </div>
-          {/* Category chips */}
-          <div className="flex gap-2 flex-wrap">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setCategoryFilter(cat)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-                  categoryFilter === cat
-                    ? 'text-white shadow-md'
-                    : 'bg-slate-100 dark:bg-white/[0.07] text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/[0.12]'
-                }`}
-                style={categoryFilter === cat && cat !== 'All'
-                  ? { backgroundColor: CATEGORY_COLORS[cat] || '#4F46E5' }
-                  : categoryFilter === cat ? { backgroundColor: '#4F46E5' }
-                  : {}
-                }
-              >
-                {cat}
-              </button>
-            ))}
+
+            {/* Category chips — horizontal scroll on mobile */}
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mb-1">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setCategoryFilter(cat)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
+                    categoryFilter === cat
+                      ? 'text-white shadow-md'
+                      : 'bg-slate-100 dark:bg-white/[0.07] text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/[0.12]'
+                  }`}
+                  style={
+                    categoryFilter === cat && cat !== 'All'
+                      ? { backgroundColor: CATEGORY_COLORS[cat] || '#4F46E5' }
+                      : categoryFilter === cat
+                      ? { backgroundColor: '#4F46E5' }
+                      : {}
+                  }
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Table */}
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left min-w-[600px]">
+          {/* ── Desktop Table (md+) ── */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left min-w-[640px]">
               <thead>
                 <tr className="border-b border-slate-200/60 dark:border-white/[0.06] text-[11px] text-slate-400 uppercase tracking-wider">
                   {[
-                    { key: 'title',  label: 'Transaction' },
-                    { key: 'category', label: 'Category'  },
-                    { key: 'date',   label: 'Date'         },
-                    { key: 'member', label: 'Member', noSort: true },
-                    { key: 'amount', label: 'Amount', right: true  },
+                    { key: 'title',    label: 'Transaction' },
+                    { key: 'category', label: 'Category'    },
+                    { key: 'date',     label: 'Date'        },
+                    { key: 'member',   label: 'Member', noSort: true },
+                    { key: 'amount',   label: 'Amount', right: true  },
                   ].map(({ key, label, noSort, right }) => (
                     <th
                       key={key}
@@ -242,7 +269,7 @@ export const Transactions = () => {
                     <td colSpan={6} className="p-12 text-center text-slate-400 text-sm">
                       {searchTerm || categoryFilter !== 'All' || memberFilter !== 'All'
                         ? 'No matching transactions found.'
-                        : 'No transactions yet. Click "+ New" to add one.'}
+                        : 'No transactions yet. Click "Add" to create one.'}
                     </td>
                   </tr>
                 ) : (
@@ -260,10 +287,10 @@ export const Transactions = () => {
                               className="w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0"
                               style={{ backgroundColor: `${CATEGORY_COLORS[txn.category] || '#6366F1'}18` }}
                             >
-                              {txn.amount > 0 ? '💰' : { Food: '🍔', Transport: '🚗', Housing: '🏠', Entertainment: '🎬', General: '📦' }[txn.category] || '💳'}
+                              {txn.amount > 0 ? '💰' : CATEGORY_EMOJI[txn.category] || '💳'}
                             </div>
-                            <div>
-                              <p className="font-medium text-slate-900 dark:text-white text-sm">{txn.title}</p>
+                            <div className="min-w-0">
+                              <p className="font-medium text-slate-900 dark:text-white text-sm truncate max-w-[180px]">{txn.title}</p>
                               {txn.note && <p className="text-[11px] text-slate-400 truncate max-w-[180px]">{txn.note}</p>}
                             </div>
                             {txn.is_recurring === 1 && (
@@ -273,7 +300,7 @@ export const Transactions = () => {
                         </td>
                         <td className="p-4">
                           <span
-                            className="px-2.5 py-1 rounded-lg text-xs font-semibold"
+                            className="px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap"
                             style={{
                               backgroundColor: `${CATEGORY_COLORS[txn.category] || '#6366F1'}18`,
                               color: CATEGORY_COLORS[txn.category] || '#6366F1',
@@ -315,7 +342,80 @@ export const Transactions = () => {
             </table>
           </div>
 
-          {/* Footer: count + net + pagination */}
+          {/* ── Mobile Card List (< md) ── */}
+          <div className="md:hidden divide-y divide-slate-100/60 dark:divide-white/[0.04]">
+            {paginated.length === 0 ? (
+              <p className="p-10 text-center text-slate-400 text-sm">
+                {searchTerm || categoryFilter !== 'All' || memberFilter !== 'All'
+                  ? 'No matching transactions found.'
+                  : 'No transactions yet. Tap "Add" to create one.'}
+              </p>
+            ) : (
+              paginated.map((txn) => {
+                const member = family.find((f) => f.id === txn.member_id);
+                return (
+                  <div key={txn.id} className="flex items-center gap-3 px-4 py-3.5">
+                    {/* Icon */}
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-base shrink-0"
+                      style={{ backgroundColor: `${CATEGORY_COLORS[txn.category] || '#6366F1'}18` }}
+                    >
+                      {txn.amount > 0 ? '💰' : CATEGORY_EMOJI[txn.category] || '💳'}
+                    </div>
+
+                    {/* Main info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-semibold text-slate-900 dark:text-white text-sm truncate">{txn.title}</p>
+                        {txn.is_recurring === 1 && <Repeat size={11} className="text-primary shrink-0" />}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <span
+                          className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
+                          style={{
+                            backgroundColor: `${CATEGORY_COLORS[txn.category] || '#6366F1'}18`,
+                            color: CATEGORY_COLORS[txn.category] || '#6366F1',
+                          }}
+                        >
+                          {txn.category}
+                        </span>
+                        <span className="text-[11px] text-slate-400">{formatDate(txn.date)}</span>
+                        {member && (
+                          <span className="text-[11px] text-slate-400 truncate">· {member.user_name || member.name}</span>
+                        )}
+                      </div>
+                      {txn.note && (
+                        <p className="text-[11px] text-slate-400 truncate mt-0.5">{txn.note}</p>
+                      )}
+                    </div>
+
+                    {/* Amount + actions */}
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <span className={`text-sm font-bold tabular-nums ${txn.amount > 0 ? 'text-secondary' : 'text-slate-900 dark:text-white'}`}>
+                        {txn.amount > 0 ? '+' : '−'}₹{Math.abs(txn.amount).toFixed(2)}
+                      </span>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => openEdit(txn)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 active:bg-blue-50 dark:active:bg-blue-500/10 transition-all"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(txn)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 active:bg-red-50 dark:active:bg-red-500/10 transition-all"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* ── Footer ── */}
           {filtered.length > 0 && (
             <div className="p-4 border-t border-slate-200/60 dark:border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-4">

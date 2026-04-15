@@ -9,8 +9,7 @@ import {
 import { useAppContext } from '../context/useAppContext';
 import { AddExpenseModal } from '../components/features/AddExpenseModal';
 import { InsightsPanel } from '../components/features/InsightsPanel';
-import { CATEGORY_COLORS } from '../utils/helpers';
-import { formatDate } from '../utils/helpers';
+import { CATEGORY_COLORS, CATEGORY_EMOJI, formatDate } from '../utils/helpers';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -327,7 +326,7 @@ export const Dashboard = () => {
                       className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0 border border-slate-200/50 dark:border-white/[0.07]"
                       style={{ backgroundColor: `${CATEGORY_COLORS[txn.category] || '#6366F1'}18` }}
                     >
-                      {txn.amount > 0 ? '💰' : { Food: '🍔', Transport: '🚗', Housing: '🏠', Entertainment: '🎬', General: '📦' }[txn.category] || '💳'}
+                      {txn.amount > 0 ? '💰' : CATEGORY_EMOJI[txn.category] || '💳'}
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{txn.title}</p>

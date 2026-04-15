@@ -5,7 +5,7 @@ import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import {
   UserPlus, Plus, Users, User, Mail, ArrowUpRight,
-  ArrowDownRight, ChevronRight, Crown, Shield, LogOut, UserMinus,
+  ArrowDownRight, ChevronRight, Crown, Shield, LogOut, UserMinus, Pencil,
 } from 'lucide-react';
 import { useAppContext } from '../context/useAppContext';
 import { CATEGORY_COLORS, formatDate } from '../utils/helpers';
@@ -25,13 +25,16 @@ const roleBadge = (role) =>
 
 export const Family = () => {
   const {
-    family, addFamilyMember, removeFamilyMember, leaveGroup,
+    family, addFamilyMember, removeFamilyMember, leaveGroup, renameGroup,
     transactions, isLoading, groups, activeGroupId, setActiveGroupId,
     createGroup, isAdmin, user, currentMembership,
   } = useAppContext();
 
   const [showInvite,       setShowInvite]       = useState(false);
   const [showCreateGroup,  setShowCreateGroup]  = useState(false);
+  const [showRename,       setShowRename]       = useState(false);
+  const [renameValue,      setRenameValue]      = useState('');
+  const [renaming,         setRenaming]         = useState(false);
   const [selectedMember,   setSelectedMember]   = useState(null);
   const [inviteForm,       setInviteForm]       = useState({ name: '', email: '', role: 'Member', limit: '' });
   const [newGroupName,     setNewGroupName]     = useState('');
@@ -104,6 +107,21 @@ export const Family = () => {
     if (ok) setSelectedMember(null);
   };
 
+  const openRename = () => {
+    const current = groups.find((g) => g.id === activeGroupId);
+    setRenameValue(current?.name || '');
+    setShowRename(true);
+  };
+
+  const handleRename = async (e) => {
+    e.preventDefault();
+    if (!renameValue.trim()) return;
+    setRenaming(true);
+    const ok = await renameGroup(activeGroupId, renameValue.trim());
+    setRenaming(false);
+    if (ok) setShowRename(false);
+  };
+
   const handleLeaveGroup = async () => {
     const groupName = groups.find((g) => g.id === activeGroupId)?.name || 'this group';
     const msg = isOwner
@@ -150,23 +168,35 @@ export const Family = () => {
 
       {/* Group selector */}
       {groups.length > 0 && (
-        <div className="flex items-center gap-2 bg-white/50 dark:bg-white/[0.04] p-1.5 rounded-2xl w-fit border border-slate-200/60 dark:border-white/[0.07] backdrop-blur-xl">
-          <span className="text-[10px] font-bold text-slate-400 px-2 uppercase tracking-wider">Group:</span>
-          <div className="flex gap-1">
-            {groups.map((g) => (
-              <button
-                key={g.id}
-                onClick={() => setActiveGroupId(g.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                  activeGroupId === g.id
-                    ? 'bg-primary text-white shadow-lg shadow-primary/25'
-                    : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-white/[0.07]'
-                }`}
-              >
-                {g.name}
-              </button>
-            ))}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 bg-white/50 dark:bg-white/[0.04] p-1.5 rounded-2xl border border-slate-200/60 dark:border-white/[0.07] backdrop-blur-xl">
+            <span className="text-[10px] font-bold text-slate-400 px-2 uppercase tracking-wider">Group:</span>
+            <div className="flex gap-1 flex-wrap">
+              {groups.map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => setActiveGroupId(g.id)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                    activeGroupId === g.id
+                      ? 'bg-primary text-white shadow-lg shadow-primary/25'
+                      : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-white/[0.07]'
+                  }`}
+                >
+                  {g.name}
+                </button>
+              ))}
+            </div>
           </div>
+          {/* Rename button — only admins/owners of the active group */}
+          {isAdmin && activeGroupId && (
+            <button
+              onClick={openRename}
+              title="Rename group"
+              className="p-2 rounded-xl text-slate-400 hover:text-primary hover:bg-primary/10 border border-slate-200/60 dark:border-white/[0.07] bg-white/50 dark:bg-white/[0.04] backdrop-blur-xl transition-all"
+            >
+              <Pencil size={14} />
+            </button>
+          )}
         </div>
       )}
 
@@ -382,6 +412,26 @@ export const Family = () => {
           <div className="flex justify-end gap-3 pt-1">
             <Button type="button" variant="ghost" onClick={() => setShowInvite(false)}>Cancel</Button>
             <Button type="submit" variant="primary">Add Member</Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Rename Group Modal */}
+      <Modal isOpen={showRename} onClose={() => setShowRename(false)} title="Rename Group">
+        <form onSubmit={handleRename} className="space-y-4">
+          <Input
+            label="New Group Name"
+            icon={Pencil}
+            placeholder="e.g. The Smith Family"
+            required
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+          />
+          <div className="flex justify-end gap-3 pt-1">
+            <Button type="button" variant="ghost" onClick={() => setShowRename(false)}>Cancel</Button>
+            <Button type="submit" variant="primary" disabled={renaming || !renameValue.trim()}>
+              {renaming ? 'Saving…' : 'Rename'}
+            </Button>
           </div>
         </form>
       </Modal>

@@ -5,8 +5,7 @@ import { Button } from '../ui/Button';
 import { Toggle } from '../ui/Toggle';
 import { useAppContext } from '../../context/useAppContext';
 import { IndianRupee, Tag, FileText, Loader2, Users, CalendarDays, StickyNote, RefreshCw } from 'lucide-react';
-
-const CATEGORIES = ['Food', 'Transport', 'Housing', 'Entertainment', 'General'];
+import { CATEGORIES } from '../../utils/helpers';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -155,12 +154,12 @@ export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1 flex items-center gap-2">
               <Tag size={14} /> Category
             </label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1 scrollbar-thin">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat}
                   type="button"
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                     form.category === cat
                       ? 'bg-primary text-white shadow-md shadow-primary/25'
                       : 'bg-slate-100 dark:bg-white/[0.07] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.12]'
