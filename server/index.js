@@ -10,10 +10,14 @@ import budgetRoutes      from './routes/budgets.js';
 /* eslint-disable no-undef */
 const PORT = process.env.PORT || 3001;
 if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET environment variable is required');
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:4173')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
 /* eslint-enable no-undef */
 
 const app = express();
-app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:4173'], credentials: true }));
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 
 app.use('/api/auth',         authRoutes);

@@ -76,11 +76,29 @@ Background: `.grid-bg` CSS class applies a subtle dot-grid pattern.
 - `memberships.user_name` (joined from `users`) is the display name; falls back to `memberships.name`.
 - Category budgets are per-group, stored in the `budgets` table, accessible via `Settings → Budget Goals`.
 
+## Deployment
+
+Full deployment plan is in `DEPLOY.md`. Key files committed to the repo:
+
+- `vercel.json` — catch-all SPA rewrite so React Router works on Vercel (prevents 404 on refresh)
+- `.vercelignore` — excludes `server/` and `graphify-out/` from Vercel's build context so `better-sqlite3` (native module) is never compiled by Vercel
+- `.env.example` — template for all required env vars
+
+**Production split:** Frontend → Vercel, Backend → Railway (Express + SQLite cannot run on Vercel serverless).
+
+Required env vars:
+
+| Where | Variable | Purpose |
+|---|---|---|
+| Vercel | `VITE_API_URL` | Railway backend URL — set **before** first build |
+| Railway | `JWT_SECRET` | Token signing secret |
+| Railway | `ALLOWED_ORIGINS` | Vercel frontend URL for CORS |
+
 ## Knowledge Graph (RAG)
 
 A pre-built knowledge graph of this codebase lives in `graphify-out/`. **Before reading source files to answer architecture or tracing questions, query the graph first.**
 
-- `graphify-out/graph.json` — full graph (146 nodes, 126 edges, 42 communities)
+- `graphify-out/graph.json` — full graph (183 nodes, 185 edges, 42 communities)
 - `graphify-out/GRAPH_REPORT.md` — community map, god nodes, surprising connections
 - `graphify-out/graph.html` — interactive visualization (open in browser)
 

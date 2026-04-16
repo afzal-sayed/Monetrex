@@ -10,6 +10,8 @@ import { Analytics } from './pages/Analytics';
 import { Family } from './pages/Family';
 import { Settings } from './pages/Settings';
 import { Toast } from './components/ui/Toast';
+import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 // ─── Error Boundary ──────────────────────────────────────────────────────────
 class ErrorBoundary extends React.Component {
@@ -80,6 +82,8 @@ function AppInner() {
         </Routes>
       </BrowserRouter>
       <Toast toast={toast} />
+      <VercelAnalytics />
+      <SpeedInsights />
     </div>
   );
 }
