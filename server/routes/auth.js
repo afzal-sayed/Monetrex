@@ -90,7 +90,7 @@ router.post('/login', authLimiter, async (req, res) => {
   }
 });
 
-router.post('/logout', (req, res) => {
+router.post('/logout', authLimiter, (req, res) => {
   const token = req.cookies?.token;
   if (token) {
     try {
