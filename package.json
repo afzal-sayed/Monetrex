@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "autoprefixer": "^10.4.27",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^11.10.0",
