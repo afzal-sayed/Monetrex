@@ -1,25 +1,22 @@
 import { useState, useEffect } from 'react';
-import { apiFetch, getToken, TOKEN_KEY } from '../../utils/api';
+import { apiFetch, TOKEN_KEY } from '../../utils/api';
 
 export const useAuthSlice = ({ showToast, setIsLoading }) => {
   const [user,      setUser]      = useState(null);
   const [authReady, setAuthReady] = useState(false);
 
-  // ── Initial token validation ─────────────────────────────────────────────
+  // ── Initial session validation via cookie ────────────────────────────────
   useEffect(() => {
     const validate = async () => {
-      const token = getToken();
-      if (!token) { setAuthReady(true); setIsLoading(false); return; }
       try {
         const res = await apiFetch('/me');
         if (res.ok) {
           const { user: u } = await res.json();
           setUser(u);
-        } else {
-          localStorage.removeItem(TOKEN_KEY);
         }
+        // 401 = no valid cookie → unauthenticated, that's fine
       } catch {
-        // Network error — don't log out, just wait
+        // Network error — don't log out, just treat as not ready
       } finally {
         setAuthReady(true);
       }
@@ -32,7 +29,8 @@ export const useAuthSlice = ({ showToast, setIsLoading }) => {
       const res  = await apiFetch('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
       const data = await res.json();
       if (!res.ok) return { success: false, error: data.error || 'Login failed' };
-      localStorage.setItem(TOKEN_KEY, data.token);
+      // Cookie is set by server — nothing to store locally
+      localStorage.removeItem(TOKEN_KEY); // clean up any legacy token
       setUser(data.user);
       showToast(`Welcome back, ${data.user.name}!`);
       return { success: true };
@@ -46,7 +44,8 @@ export const useAuthSlice = ({ showToast, setIsLoading }) => {
       const res  = await apiFetch('/auth/signup', { method: 'POST', body: JSON.stringify({ name, email, password }) });
       const data = await res.json();
       if (!res.ok) return { success: false, error: data.error || 'Signup failed' };
-      localStorage.setItem(TOKEN_KEY, data.token);
+      // Cookie is set by server
+      localStorage.removeItem(TOKEN_KEY);
       setUser(data.user);
       showToast(`Welcome to Monetrex, ${data.user.name}!`);
       return { success: true };

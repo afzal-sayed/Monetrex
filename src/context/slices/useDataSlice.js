@@ -161,18 +161,24 @@ export const useDataSlice = ({ showToast }) => {
   };
 
   // ── Budgets ───────────────────────────────────────────────────────────────
-  const updateBudgets = async (budgetMap) => {
+  const updateBudgets = async (budgetMap, month = 'default') => {
     if (!activeGroupId) return false;
     try {
       const res  = await apiFetch(`/groups/${activeGroupId}/budgets`, {
         method: 'PUT',
-        body:   JSON.stringify({ budgets: budgetMap }),
+        body:   JSON.stringify({ budgets: budgetMap, month }),
       });
       const data = await res.json();
       if (!res.ok) { showToast(data.error || 'Failed to save budgets', 'error'); return false; }
       const newMap = {};
       (data.budgets || []).forEach((b) => { newMap[b.category] = b.amount; });
-      setBudgets((prev) => ({ ...prev, [activeGroupId]: newMap }));
+      setBudgets((prev) => ({
+        ...prev,
+        [activeGroupId]: {
+          ...(prev[activeGroupId] || {}),
+          [month]: newMap,
+        },
+      }));
       showToast('Budgets saved!');
       return true;
     } catch {

@@ -1,6 +1,6 @@
 import React, { createContext, useEffect, useCallback, useMemo } from 'react';
 import { computeMonthlyData } from '../utils/helpers';
-import { apiFetch, getToken, TOKEN_KEY, GROUP_KEY } from '../utils/api';
+import { apiFetch, GROUP_KEY } from '../utils/api';
 import { useUISlice }   from './slices/useUISlice';
 import { useAuthSlice } from './slices/useAuthSlice';
 import { useDataSlice } from './slices/useDataSlice';
@@ -14,8 +14,7 @@ export const AppProvider = ({ children }) => {
   const auth = useAuthSlice({ showToast: ui.showToast, setIsLoading: ui.setIsLoading });
   const data = useDataSlice({ showToast: ui.showToast });
 
-  // Destructure to give hooks stable, named dependencies
-  const { showToast, setIsLoading, theme, toggleTheme, toast, isLoading } = ui;
+  const { showToast, setIsLoading, theme, toggleTheme, toasts, isLoading } = ui;
   const { user, setUser, authReady, login, signup, updateUser, changePassword } = auth;
   const {
     transactions, setTransactions, family, setFamily,
@@ -27,13 +26,13 @@ export const AppProvider = ({ children }) => {
   } = data;
 
   // ── Fetch all app data ────────────────────────────────────────────────────
-  const fetchData = useCallback(async () => {
-    if (!getToken()) { setIsLoading(false); return; }
+  const fetchData = useCallback(async (months = 12) => {
     setIsLoading(true);
     try {
-      const res = await apiFetch('/data');
+      const param = months >= 999 ? '' : `?months=${months}`;
+      const res = await apiFetch(`/data${param}`);
       if (!res.ok) {
-        if (res.status === 401) { localStorage.removeItem(TOKEN_KEY); setUser(null); }
+        if (res.status === 401) { setUser(null); }
         setIsLoading(false);
         return;
       }
@@ -41,10 +40,14 @@ export const AppProvider = ({ children }) => {
       setGroups(d.groups || []);
       setFamily(d.memberships || []);
       setTransactions(d.transactions || []);
+
+      // Budget map: { groupId: { month: { category: amount } } }
       const budgetMap = {};
       (d.budgets || []).forEach((b) => {
         if (!budgetMap[b.group_id]) budgetMap[b.group_id] = {};
-        budgetMap[b.group_id][b.category] = b.amount;
+        const mKey = b.month || 'default';
+        if (!budgetMap[b.group_id][mKey]) budgetMap[b.group_id][mKey] = {};
+        budgetMap[b.group_id][mKey][b.category] = b.amount;
       });
       setBudgets(budgetMap);
     } catch (e) {
@@ -98,10 +101,12 @@ export const AppProvider = ({ children }) => {
     return groupTxns.filter((t) => t.member_id === currentMembership?.id);
   }, [transactions, user, activeGroupId, isAdmin, currentMembership]);
 
-  const activeBudgets = useMemo(
-    () => budgets[activeGroupId] || {},
-    [budgets, activeGroupId]
-  );
+  // Budgets: current month → fallback to 'default'
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const activeBudgets = useMemo(() => {
+    const groupBudgets = budgets[activeGroupId] || {};
+    return groupBudgets[currentMonth] || groupBudgets['default'] || {};
+  }, [budgets, activeGroupId, currentMonth]);
 
   const monthlyData = useMemo(
     () => computeMonthlyData(visibleTransactions),
@@ -109,8 +114,10 @@ export const AppProvider = ({ children }) => {
   );
 
   // ── Cross-cutting auth actions ─────────────────────────────────────────
-  const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
+  const logout = useCallback(async () => {
+    try {
+      await apiFetch('/auth/logout', { method: 'POST' });
+    } catch { /* ignore network errors on logout */ }
     localStorage.removeItem(GROUP_KEY);
     setUser(null);
     clearAll();
@@ -125,7 +132,7 @@ export const AppProvider = ({ children }) => {
         showToast(d.error || 'Failed to delete account', 'error');
         return false;
       }
-      logout();
+      await logout();
       return true;
     } catch {
       showToast('Failed to delete account', 'error');
@@ -133,7 +140,6 @@ export const AppProvider = ({ children }) => {
     }
   }, [logout, showToast]);
 
-  // leaveGroup needs the current user id from auth slice
   const leaveGroup = useCallback(
     (groupId) => leaveGroupRaw(groupId, user?.id),
     [leaveGroupRaw, user?.id]
@@ -165,12 +171,16 @@ export const AppProvider = ({ children }) => {
 
       // Budgets
       budgets: activeBudgets, updateBudgets,
+      currentMonth,
 
       // Chart data
       monthlyData,
 
       // Loading / Toast
-      isLoading, toast, showToast,
+      isLoading, toasts, showToast,
+
+      // Data refresh
+      fetchData,
     }}>
       {children}
     </AppContext.Provider>

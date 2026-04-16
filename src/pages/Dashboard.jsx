@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Plus, ArrowUpRight, ArrowDownRight, TrendingUp, CreditCard, Wallet, Repeat } from 'lucide-react';
@@ -33,39 +34,55 @@ export const Dashboard = () => {
   } = useAppContext();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [statsPeriod, setStatsPeriod] = useState('month'); // 'month' | 'all'
 
   // ── Stats ───────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
-    const income  = transactions.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
-    const expense = transactions.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
+    const now  = new Date();
+    const mKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const currentMonthKey = mKey(now);
+
+    const scopedTxns = statsPeriod === 'month'
+      ? transactions.filter((t) => t.date?.slice(0, 7) === currentMonthKey)
+      : transactions;
+
+    const income  = scopedTxns.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+    const expense = scopedTxns.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
     const balance = income - expense;
     const fmt = (v) => `₹${v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-    // Current month spend vs previous
-    const now = new Date();
-    const mKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const thisMSpend = transactions.filter((t) => t.date?.slice(0, 7) === mKey(now) && t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
-    const lastMSpend = transactions.filter((t) => t.date?.slice(0, 7) === mKey(prev) && t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
-    const spendTrend = lastMSpend > 0 ? ((thisMSpend - lastMSpend) / lastMSpend * 100).toFixed(1) : null;
+    // Spend trend vs previous month (only shown in month mode)
+    let spendTrend = null;
+    if (statsPeriod === 'month') {
+      const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMSpend = transactions
+        .filter((t) => t.date?.slice(0, 7) === mKey(prev) && t.amount < 0)
+        .reduce((s, t) => s + Math.abs(t.amount), 0);
+      if (lastMSpend > 0) spendTrend = ((expense - lastMSpend) / lastMSpend * 100).toFixed(1);
+    }
 
     return [
-      { id: 1, title: 'Total Balance',   value: fmt(balance), trend: null,       isPositive: balance >= 0, icon: Wallet      },
-      { id: 2, title: 'Total Income',    value: fmt(income),  trend: null,       isPositive: true,         icon: TrendingUp  },
-      { id: 3, title: 'Total Expenses',  value: fmt(expense), trend: spendTrend, isPositive: spendTrend !== null ? parseFloat(spendTrend) <= 0 : true, icon: CreditCard },
+      { id: 1, title: 'Balance',  value: fmt(balance), trend: null,       isPositive: balance >= 0, icon: Wallet      },
+      { id: 2, title: 'Income',   value: fmt(income),  trend: null,       isPositive: true,         icon: TrendingUp  },
+      { id: 3, title: 'Expenses', value: fmt(expense), trend: spendTrend, isPositive: spendTrend !== null ? parseFloat(spendTrend) <= 0 : true, icon: CreditCard },
     ];
-  }, [transactions]);
+  }, [transactions, statsPeriod]);
 
   // ── Category breakdown ──────────────────────────────────────────────────
   const categoryData = useMemo(() => {
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const scopedTxns = statsPeriod === 'month'
+      ? transactions.filter((t) => t.date?.slice(0, 7) === currentMonthKey)
+      : transactions;
     const cats = {};
-    transactions.filter((t) => t.amount < 0).forEach((t) => {
+    scopedTxns.filter((t) => t.amount < 0).forEach((t) => {
       cats[t.category] = (cats[t.category] || 0) + Math.abs(t.amount);
     });
     return Object.entries(cats)
       .sort((a, b) => b[1] - a[1])
       .map(([name, value]) => ({ name, value, color: CATEGORY_COLORS[name] || '#6366F1' }));
-  }, [transactions]);
+  }, [transactions, statsPeriod]);
 
   // ── Budget progress ─────────────────────────────────────────────────────
   const budgetProgress = useMemo(() => {
@@ -126,10 +143,28 @@ export const Dashboard = () => {
             ) : null}
           </div>
         </div>
-        <Button variant="primary" className="gap-2 shrink-0" onClick={() => setIsModalOpen(true)}>
-          <Plus size={17} />
-          <span className="hidden sm:inline">Add</span>
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Period toggle */}
+          <div className="hidden sm:flex gap-0.5 p-0.5 rounded-xl bg-slate-100 dark:bg-white/[0.07]">
+            {[['month', 'This Month'], ['all', 'All Time']].map(([val, label]) => (
+              <button
+                key={val}
+                onClick={() => setStatsPeriod(val)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all ${
+                  statsPeriod === val
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <Button variant="primary" className="gap-2" onClick={() => setIsModalOpen(true)}>
+            <Plus size={17} />
+            <span className="hidden sm:inline">Add</span>
+          </Button>
+        </div>
       </header>
 
       {/* Stats Row */}
@@ -217,21 +252,37 @@ export const Dashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <Card glass>
               <CardHeader><CardTitle className="text-slate-900 dark:text-white text-base">Category Split</CardTitle></CardHeader>
-              <CardContent className="h-44">
+              <CardContent>
                 {categoryData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Tooltip
-                        formatter={(v) => [`₹${v.toFixed(2)}`, '']}
-                        contentStyle={{ backgroundColor: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: '#fff' }}
-                      />
-                      <Pie data={categoryData} innerRadius={52} outerRadius={68} paddingAngle={4} dataKey="value" strokeWidth={0}>
-                        {categoryData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div className="flex flex-col gap-3">
+                    <div className="h-40">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Tooltip
+                            formatter={(v) => [`₹${v.toFixed(2)}`, '']}
+                            contentStyle={{ backgroundColor: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: '#fff' }}
+                          />
+                          <Pie data={categoryData} innerRadius={48} outerRadius={62} paddingAngle={4} dataKey="value" strokeWidth={0}>
+                            {categoryData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {/* Legend */}
+                    <div className="flex flex-col gap-1 max-h-28 overflow-y-auto scrollbar-thin pr-1">
+                      {categoryData.map((entry) => (
+                        <div key={entry.name} className="flex items-center justify-between gap-2 text-[11px]">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
+                            <span className="text-slate-600 dark:text-slate-300 truncate">{entry.name}</span>
+                          </div>
+                          <span className="text-slate-500 dark:text-slate-400 tabular-nums shrink-0">₹{entry.value.toFixed(0)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 ) : (
-                  <div className="h-full flex items-center justify-center">
+                  <div className="h-44 flex items-center justify-center">
                     <p className="text-slate-400 text-sm text-center">No expense data yet.</p>
                   </div>
                 )}
@@ -267,8 +318,8 @@ export const Dashboard = () => {
                       </p>
                     </div>
                     {/* Per-category mini bars */}
-                    <div className="space-y-2">
-                      {Object.entries(budgets).slice(0, 3).map(([cat, limit]) => {
+                    <div className="space-y-2 max-h-32 overflow-y-auto scrollbar-thin pr-1">
+                      {Object.entries(budgets).map(([cat, limit]) => {
                         const now = new Date();
                         const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
                         const spent = transactions
@@ -342,9 +393,9 @@ export const Dashboard = () => {
           </CardContent>
           {transactions.length > 6 && (
             <div className="p-4 pt-0">
-              <a href="/transactions" className="text-xs text-primary hover:underline block text-center">
+              <Link to="/transactions" className="text-xs text-primary hover:underline block text-center">
                 View all {transactions.length} transactions →
-              </a>
+              </Link>
             </div>
           )}
         </Card>

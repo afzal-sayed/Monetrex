@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import authRoutes        from './routes/auth.js';
 import userRoutes        from './routes/users.js';
 import dataRoutes        from './routes/data.js';
@@ -17,7 +19,9 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,ht
 /* eslint-enable no-undef */
 
 const app = express();
+app.use(helmet());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(cookieParser());
 app.use(express.json());
 
 app.use('/api/auth',         authRoutes);

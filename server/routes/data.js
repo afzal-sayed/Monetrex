@@ -34,11 +34,16 @@ router.get('/', authenticate, (req, res) => {
       WHERE m.group_id IN (${ph})
     `).all(...groupIds);
 
-    const transactions = db.prepare(`
-      SELECT * FROM transactions
-      WHERE group_id IN (${ph})
-      ORDER BY date DESC, created_at DESC
-    `).all(...groupIds);
+    const months = parseInt(req.query.months, 10);
+    const useAll = !months || months <= 0 || months >= 999;
+
+    const transactions = useAll
+      ? db.prepare(
+          `SELECT * FROM transactions WHERE group_id IN (${ph}) ORDER BY date DESC, created_at DESC`
+        ).all(...groupIds)
+      : db.prepare(
+          `SELECT * FROM transactions WHERE group_id IN (${ph}) AND date >= date('now', '-' || ? || ' months') ORDER BY date DESC, created_at DESC`
+        ).all(...groupIds, months);
 
     const budgets = db.prepare(
       `SELECT * FROM budgets WHERE group_id IN (${ph})`

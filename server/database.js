@@ -69,6 +69,42 @@ db.exec(`
     UNIQUE(group_id, category),
     FOREIGN KEY (group_id) REFERENCES groups_tbl(id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS revoked_tokens (
+    jti        TEXT PRIMARY KEY,
+    revoked_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    token      TEXT PRIMARY KEY,
+    user_id    TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
 `);
+
+// ── Budget table migration: add month column + fix UNIQUE ────────────────────
+const budgetCols = db.pragma('table_info(budgets)').map((c) => c.name);
+if (!budgetCols.includes('month')) {
+  db.exec(`ALTER TABLE budgets ADD COLUMN month TEXT NOT NULL DEFAULT 'default'`);
+}
+const budgetIndexes = db.pragma('index_list(budgets)');
+if (!budgetIndexes.some((i) => i.name === 'uq_budgets_month')) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS budgets_new (
+      id       TEXT PRIMARY KEY,
+      group_id TEXT NOT NULL,
+      category TEXT NOT NULL,
+      month    TEXT NOT NULL DEFAULT 'default',
+      amount   REAL NOT NULL,
+      UNIQUE(group_id, category, month),
+      FOREIGN KEY (group_id) REFERENCES groups_tbl(id) ON DELETE CASCADE
+    );
+    INSERT INTO budgets_new SELECT id, group_id, category, COALESCE(month,'default'), amount FROM budgets;
+    DROP TABLE budgets;
+    ALTER TABLE budgets_new RENAME TO budgets;
+  `);
+  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_budgets_month ON budgets(group_id, category, month);`);
+}
 
 export default db;

@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import { Toggle } from '../components/ui/Toggle';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { useAppContext } from '../context/useAppContext';
-import { Sun, Moon, Lock, Target, IndianRupee, Loader2 } from 'lucide-react';
+import { Sun, Moon, Lock, Target, IndianRupee, Loader2, X, Plus } from 'lucide-react';
 import { CATEGORIES, CATEGORY_COLORS } from '../utils/helpers';
 
 // ─── Password Change Section ────────────────────────────────────────────────
@@ -17,7 +18,7 @@ const PasswordSection = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (form.newPass.length < 6) { setError('New password must be at least 6 characters'); return; }
+    if (form.newPass.length < 8) { setError('New password must be at least 8 characters'); return; }
     if (form.newPass !== form.confirm) { setError('New passwords do not match'); return; }
     setLoading(true);
     const result = await changePassword(form.current, form.newPass);
@@ -45,7 +46,7 @@ const PasswordSection = () => {
         <Input
           label="New Password" icon={Lock} type="password"
           value={form.newPass} onChange={(e) => setForm({ ...form, newPass: e.target.value })}
-          placeholder="••••••••" minLength={6} required
+          placeholder="••••••••" minLength={8} required
         />
         <Input
           label="Confirm New Password" icon={Lock} type="password"
@@ -62,66 +63,106 @@ const PasswordSection = () => {
 
 // ─── Budget Goals Section ───────────────────────────────────────────────────
 const BudgetSection = () => {
-  const { budgets, updateBudgets, isAdmin, activeGroupId } = useAppContext();
-  const [localBudgets, setLocalBudgets] = useState(() => {
-    const init = {};
-    CATEGORIES.forEach((c) => { init[c] = budgets[c] ? String(budgets[c]) : ''; });
-    return init;
-  });
+  const { budgets, updateBudgets, isAdmin, activeGroupId, currentMonth } = useAppContext();
+
+  // rows = [{ cat, amt }] — only categories that have a budget
+  const [rows,   setRows]   = useState(() =>
+    Object.entries(budgets).filter(([, v]) => v > 0).map(([cat, amt]) => ({ cat, amt: String(amt) }))
+  );
+  const [addCat, setAddCat] = useState('');
+  const [addAmt, setAddAmt] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // Sync if budgets change externally
   React.useEffect(() => {
-    const init = {};
-    CATEGORIES.forEach((c) => { init[c] = budgets[c] ? String(budgets[c]) : ''; });
-    setLocalBudgets(init);
+    setRows(Object.entries(budgets).filter(([, v]) => v > 0).map(([cat, amt]) => ({ cat, amt: String(amt) })));
   }, [budgets]);
+
+  const usedCats   = new Set(rows.map((r) => r.cat));
+  const availCats  = CATEGORIES.filter((c) => !usedCats.has(c));
+
+  const removeRow  = (cat) => setRows((prev) => prev.filter((r) => r.cat !== cat));
+  const updateAmt  = (cat, val) => setRows((prev) => prev.map((r) => r.cat === cat ? { ...r, amt: val } : r));
+
+  const handleAdd  = () => {
+    if (!addCat || !addAmt || parseFloat(addAmt) <= 0) return;
+    setRows((prev) => [...prev, { cat: addCat, amt: addAmt }]);
+    setAddCat(''); setAddAmt('');
+  };
 
   const handleSave = async () => {
     setSaving(true);
+    // Send full CATEGORIES payload — 0 for absent ones (backend deletes those)
     const payload = {};
     CATEGORIES.forEach((c) => {
-      const v = parseFloat(localBudgets[c]);
-      payload[c] = isNaN(v) ? 0 : v;
+      const found = rows.find((r) => r.cat === c);
+      payload[c] = found ? (parseFloat(found.amt) || 0) : 0;
     });
-    await updateBudgets(payload);
+    await updateBudgets(payload, currentMonth);
     setSaving(false);
   };
 
-  if (!activeGroupId) {
-    return <p className="text-sm text-slate-400">No active group found. Try refreshing the page.</p>;
-  }
-  if (!isAdmin) {
-    return <p className="text-sm text-slate-400">Only admins and owners can manage budget goals.</p>;
-  }
+  if (!activeGroupId) return <p className="text-sm text-slate-400">No active group found. Try refreshing the page.</p>;
+  if (!isAdmin)       return <p className="text-sm text-slate-400">Only admins and owners can manage budget goals.</p>;
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-slate-500 dark:text-slate-400">
-        Set monthly spending limits per category. Leave blank for no limit.
+        Monthly spending limits for <span className="font-semibold text-slate-700 dark:text-slate-300">{currentMonth}</span>. Categories without a limit are uncapped.
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {CATEGORIES.map((cat) => (
-          <div key={cat}>
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-2 mb-1.5">
-              <span
-                className="w-2.5 h-2.5 rounded-full"
-                style={{ backgroundColor: CATEGORY_COLORS[cat] }}
+
+      {/* Existing budget rows */}
+      {rows.length > 0 ? (
+        <div className="space-y-2.5">
+          {rows.map(({ cat, amt }) => (
+            <div key={cat} className="flex items-center gap-3">
+              <div className="flex items-center gap-2 w-36 shrink-0">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat] || '#6366F1' }} />
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">{cat}</span>
+              </div>
+              <Input
+                icon={IndianRupee} type="number" min="0" step="10"
+                value={amt}
+                onChange={(e) => updateAmt(cat, e.target.value)}
+                className="flex-1"
               />
-              {cat}
-            </label>
-            <Input
-              icon={IndianRupee}
-              type="number"
-              min="0"
-              step="10"
-              placeholder="No limit"
-              value={localBudgets[cat]}
-              onChange={(e) => setLocalBudgets((b) => ({ ...b, [cat]: e.target.value }))}
-            />
-          </div>
-        ))}
-      </div>
+              <button
+                onClick={() => removeRow(cat)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all shrink-0"
+                title="Remove budget"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-slate-400 py-2">No budgets set for this month.</p>
+      )}
+
+      {/* Add new budget row */}
+      {availCats.length > 0 && (
+        <div className="flex items-center gap-3 pt-2 border-t border-slate-200/60 dark:border-white/[0.06]">
+          <select
+            value={addCat}
+            onChange={(e) => setAddCat(e.target.value)}
+            className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/40 text-sm text-slate-700 dark:text-slate-200 outline-none focus:ring-1 focus:ring-primary"
+          >
+            <option value="">Select category…</option>
+            {availCats.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <Input
+            icon={IndianRupee} type="number" min="0" step="10"
+            placeholder="Amount"
+            value={addAmt}
+            onChange={(e) => setAddAmt(e.target.value)}
+            className="w-32"
+          />
+          <Button variant="glass" onClick={handleAdd} className="gap-1.5 shrink-0">
+            <Plus size={14} /> Add
+          </Button>
+        </div>
+      )}
+
       <Button variant="primary" onClick={handleSave} disabled={saving} className="gap-2">
         {saving ? <><Loader2 size={15} className="animate-spin" /> Saving…</> : 'Save Budget Goals'}
       </Button>
@@ -136,6 +177,7 @@ export const Settings = () => {
   const [notifications, setNotifications] = useState(user?.notifications ?? true);
   const [weeklyReport,  setWeeklyReport]  = useState(user?.weekly_report  ?? false);
   const [isSaving,      setIsSaving]      = useState(false);
+  const [confirmState,  setConfirmState]  = useState(null);
 
   const [formData, setFormData] = useState({
     name:  user?.name  || '',
@@ -149,13 +191,17 @@ export const Settings = () => {
     setIsSaving(false);
   };
 
-  const handleDeleteAccount = async () => {
-    const confirmed = window.confirm(
-      'Are you sure you want to permanently delete your account? All your data will be lost and this cannot be undone.'
-    );
-    if (!confirmed) return;
-    const ok = await deleteAccount();
-    if (!ok) showToast('Failed to delete account', 'error');
+  const handleDeleteAccount = () => {
+    setConfirmState({
+      title: 'Delete your account?',
+      message: 'All your data — groups, transactions, budgets — will be permanently deleted. This cannot be undone.',
+      confirmLabel: 'Delete Account',
+      danger: true,
+      onConfirm: async () => {
+        const ok = await deleteAccount();
+        if (!ok) showToast('Failed to delete account', 'error');
+      },
+    });
   };
 
   return (
@@ -237,20 +283,26 @@ export const Settings = () => {
             <Toggle checked={theme === 'dark'} onChange={toggleTheme} />
           </div>
 
-          <div className="border-t border-slate-200/60 dark:border-white/[0.06] pt-6 flex items-center justify-between">
+          <div className="border-t border-slate-200/60 dark:border-white/[0.06] pt-6 flex items-center justify-between opacity-50">
             <div>
-              <p className="text-slate-900 dark:text-white font-semibold text-sm">Push Notifications</p>
+              <div className="flex items-center gap-2">
+                <p className="text-slate-900 dark:text-white font-semibold text-sm">Push Notifications</p>
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-primary/10 text-primary">Coming soon</span>
+              </div>
               <p className="text-xs text-slate-400">Alerts when expenses hit thresholds.</p>
             </div>
-            <Toggle checked={notifications} onChange={setNotifications} />
+            <Toggle checked={notifications} onChange={setNotifications} disabled />
           </div>
 
-          <div className="border-t border-slate-200/60 dark:border-white/[0.06] pt-6 flex items-center justify-between">
+          <div className="border-t border-slate-200/60 dark:border-white/[0.06] pt-6 flex items-center justify-between opacity-50">
             <div>
-              <p className="text-slate-900 dark:text-white font-semibold text-sm">Weekly Report</p>
+              <div className="flex items-center gap-2">
+                <p className="text-slate-900 dark:text-white font-semibold text-sm">Weekly Report</p>
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-primary/10 text-primary">Coming soon</span>
+              </div>
               <p className="text-xs text-slate-400">Weekly email summary of spending.</p>
             </div>
-            <Toggle checked={weeklyReport} onChange={setWeeklyReport} />
+            <Toggle checked={weeklyReport} onChange={setWeeklyReport} disabled />
           </div>
         </CardContent>
       </Card>
@@ -271,6 +323,8 @@ export const Settings = () => {
           </Button>
         </CardContent>
       </Card>
+
+      <ConfirmModal state={confirmState} onClose={() => setConfirmState(null)} />
     </div>
   );
 };
