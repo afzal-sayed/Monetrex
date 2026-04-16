@@ -1,6 +1,8 @@
+import { randomUUID } from 'crypto';
 import { db } from './database.js';
 
-export const genId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+export const genId  = () => randomUUID();
+export const genJti = () => randomUUID();
 
 export const safeUser = (u) => {
   if (!u) return null;

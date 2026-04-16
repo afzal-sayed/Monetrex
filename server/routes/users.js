@@ -4,6 +4,8 @@ import { db } from '../database.js';
 import { safeUser } from '../helpers.js';
 import { authenticate } from '../middleware/authenticate.js';
 
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+
 const router = Router();
 
 router.get('/', authenticate, (req, res) => {
@@ -16,7 +18,11 @@ router.patch('/', authenticate, async (req, res) => {
   try {
     const updates = {};
     if (req.body.name            !== undefined) updates.name          = req.body.name.trim();
-    if (req.body.email           !== undefined) updates.email         = req.body.email.toLowerCase().trim();
+    if (req.body.email           !== undefined) {
+      const emailVal = req.body.email.toLowerCase().trim();
+      if (!isValidEmail(emailVal)) return res.status(400).json({ error: 'Enter a valid email address' });
+      updates.email = emailVal;
+    }
     if (req.body.notifications   !== undefined) updates.notifications = req.body.notifications ? 1 : 0;
     if (req.body.weeklyReport    !== undefined) updates.weekly_report = req.body.weeklyReport  ? 1 : 0;
 
@@ -37,7 +43,7 @@ router.post('/change-password', authenticate, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Both passwords are required' });
-    if (newPassword.length < 6) return res.status(400).json({ error: 'New password must be at least 6 characters' });
+    if (newPassword.length < 8) return res.status(400).json({ error: 'New password must be at least 8 characters' });
 
     const user = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.userId);
     const valid = await bcrypt.compare(currentPassword, user.password_hash);

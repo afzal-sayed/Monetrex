@@ -1,16 +1,17 @@
-export const API       = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-export const TOKEN_KEY = 'monetrex_token';
+export const API       = import.meta.env.VITE_API_URL || '/api';
 export const GROUP_KEY = 'monetrex_active_group';
 
-export const getToken = () => localStorage.getItem(TOKEN_KEY);
+// Token is now stored in an HttpOnly cookie — not accessible from JS.
+// Keep TOKEN_KEY exported for any legacy references (can be removed after cleanup).
+export const TOKEN_KEY = 'monetrex_token';
+export const getToken  = () => null; // deprecated — auth via cookie
 
 export const apiFetch = async (path, options = {}) => {
-  const token = getToken();
   const res = await fetch(`${API}${path}`, {
     ...options,
+    credentials: 'include', // send HttpOnly cookie on every request
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });

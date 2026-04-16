@@ -1,5 +1,9 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
+import lusca from 'lusca';
 import authRoutes        from './routes/auth.js';
 import userRoutes        from './routes/users.js';
 import dataRoutes        from './routes/data.js';
@@ -16,9 +20,21 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,ht
   .filter(Boolean);
 /* eslint-enable no-undef */
 
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please try again later.' },
+});
+
 const app = express();
+app.use(helmet());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(cookieParser());
 app.use(express.json());
+app.use(lusca.csrf());
+app.use('/api', apiLimiter);  // blanket rate limit for all API routes
 
 app.use('/api/auth',         authRoutes);
 app.use('/api/me',           userRoutes);
