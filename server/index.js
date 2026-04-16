@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import lusca from 'lusca';
 import authRoutes        from './routes/auth.js';
 import userRoutes        from './routes/users.js';
 import dataRoutes        from './routes/data.js';
@@ -23,6 +24,7 @@ app.use(helmet());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(cookieParser());
 app.use(express.json());
+app.use(lusca.csrf());
 
 app.use('/api/auth',         authRoutes);
 app.use('/api/me',           userRoutes);
