@@ -1,22 +1,56 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { randomBytes } from 'crypto';
+import rateLimit from 'express-rate-limit';
+import { Resend } from 'resend';
 import { db } from '../database.js';
-import { genId, safeUser, createDefaultGroup } from '../helpers.js';
+import { genId, genJti, safeUser, createDefaultGroup } from '../helpers.js';
 
 /* eslint-disable no-undef */
 const JWT_SECRET = process.env.JWT_SECRET;
+const IS_PROD    = process.env.NODE_ENV === 'production';
+const resend     = IS_PROD ? new Resend(process.env.RESEND_API_KEY) : null;
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'noreply@monetrex.app';
+const APP_URL    = process.env.APP_URL || 'http://localhost:5173';
 /* eslint-enable no-undef */
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many attempts. Please try again in 15 minutes.' },
+});
+
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+
+ 
+const COOKIE_OPTS = {
+  httpOnly: true,
+  secure:   IS_PROD,
+  sameSite: IS_PROD ? 'none' : 'lax',
+  path:     '/',
+  maxAge:   7 * 24 * 60 * 60 * 1000,
+};
+ 
+
+const signToken = (userId) => {
+  const jti   = genJti();
+  const token = jwt.sign({ userId, jti }, JWT_SECRET, { expiresIn: '7d', algorithm: 'HS256' });
+  return { token, jti };
+};
 
 const router = Router();
 
-router.post('/signup', async (req, res) => {
+router.post('/signup', authLimiter, async (req, res) => {
   try {
     const { name, email, password } = req.body;
-    if (!name?.trim())    return res.status(400).json({ error: 'Name is required' });
-    if (!email?.trim())   return res.status(400).json({ error: 'Email is required' });
-    if (!password)        return res.status(400).json({ error: 'Password is required' });
-    if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
+    if (!email?.trim()) return res.status(400).json({ error: 'Email is required' });
+    if (!isValidEmail(email.trim())) return res.status(400).json({ error: 'Enter a valid email address' });
+    if (!password) return res.status(400).json({ error: 'Password is required' });
+    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
 
     const emailLower = email.toLowerCase().trim();
     const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(emailLower);
@@ -32,15 +66,16 @@ router.post('/signup', async (req, res) => {
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
     createDefaultGroup(id, name.trim(), emailLower);
 
-    const token = jwt.sign({ userId: id }, JWT_SECRET, { expiresIn: '7d' });
-    res.status(201).json({ token, user: safeUser(user) });
+    const { token } = signToken(id);
+    res.cookie('token', token, COOKIE_OPTS);
+    res.status(201).json({ user: safeUser(user) });
   } catch (e) {
     console.error('Signup error:', e);
     res.status(500).json({ error: 'Server error during signup' });
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
@@ -51,11 +86,96 @@ router.post('/login', async (req, res) => {
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(401).json({ error: 'Invalid password' });
 
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: safeUser(user) });
+    const { token } = signToken(user.id);
+    res.cookie('token', token, COOKIE_OPTS);
+    res.json({ user: safeUser(user) });
   } catch (e) {
     console.error('Login error:', e);
     res.status(500).json({ error: 'Server error during login' });
+  }
+});
+
+router.post('/logout', authLimiter, (req, res) => {
+  const token = req.cookies?.token;
+  if (token) {
+    try {
+      const payload = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
+      if (payload.jti) {
+        db.prepare('INSERT OR IGNORE INTO revoked_tokens (jti, revoked_at) VALUES (?, ?)')
+          .run(payload.jti, new Date().toISOString());
+      }
+    } catch { /* expired token — still clear the cookie */ }
+  }
+  res.clearCookie('token', COOKIE_OPTS);
+  res.json({ ok: true });
+});
+
+// ── Forgot / Reset Password ──────────────────────────────────────────────────
+
+router.post('/forgot-password', authLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const user = db.prepare('SELECT id, email FROM users WHERE email = ?').get(email.toLowerCase().trim());
+    // Always return 200 to prevent email enumeration
+    if (!user) return res.json({ ok: true });
+
+    db.prepare('DELETE FROM password_reset_tokens WHERE user_id = ?').run(user.id);
+
+    const resetToken = randomBytes(32).toString('hex');
+    const expiresAt  = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+    db.prepare('INSERT INTO password_reset_tokens (token, user_id, expires_at) VALUES (?, ?, ?)')
+      .run(resetToken, user.id, expiresAt);
+
+    const resetLink = `${APP_URL}/reset-password?token=${resetToken}`;
+
+    if (resend) {
+      await resend.emails.send({
+        from:    FROM_EMAIL,
+        to:      user.email,
+        subject: 'Reset your Monetrex password',
+        html: `
+          <p>You requested a password reset for your Monetrex account.</p>
+          <p>Click the link below to reset your password. It expires in 1 hour.</p>
+          <p><a href="${resetLink}">Reset Password</a></p>
+          <p>If you didn't request this, you can safely ignore this email.</p>
+        `,
+      });
+    } else {
+      console.log(`[DEV] Password reset link for ${user.email}: ${resetLink}`);
+    }
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('Forgot password error:', e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/reset-password', authLimiter, async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) return res.status(400).json({ error: 'Token and new password are required' });
+    if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+
+    const row = db.prepare('SELECT * FROM password_reset_tokens WHERE token = ?').get(token);
+    if (!row) return res.status(400).json({ error: 'Invalid or expired reset token' });
+
+    if (new Date(row.expires_at) < new Date()) {
+      db.prepare('DELETE FROM password_reset_tokens WHERE token = ?').run(token);
+      return res.status(400).json({ error: 'Reset token has expired. Please request a new one.' });
+    }
+
+    const hash = await bcrypt.hash(newPassword, 10);
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, row.user_id);
+    db.prepare('DELETE FROM password_reset_tokens WHERE token = ?').run(token);
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('Reset password error:', e);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

@@ -12,6 +12,8 @@ router.post('/groups/:groupId/transactions', authenticate, (req, res) => {
 
     if (!title?.trim()) return res.status(400).json({ error: 'Title is required' });
     if (amount === undefined || amount === null) return res.status(400).json({ error: 'Amount is required' });
+    const parsedAmount = parseFloat(amount);
+    if (!Number.isFinite(parsedAmount)) return res.status(400).json({ error: 'Amount must be a valid number' });
     if (!memberId) return res.status(400).json({ error: 'Member is required' });
 
     const isMember = db.prepare(
@@ -30,7 +32,7 @@ router.post('/groups/:groupId/transactions', authenticate, (req, res) => {
     db.prepare(`
       INSERT INTO transactions (id, group_id, member_id, title, amount, category, note, date, is_recurring)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, groupId, memberId, title.trim(), parseFloat(amount),
+    `).run(id, groupId, memberId, title.trim(), parsedAmount,
            category || 'General', note?.trim() || '', txDate, isRecurring ? 1 : 0);
 
     const transaction = db.prepare('SELECT * FROM transactions WHERE id = ?').get(id);
@@ -55,12 +57,20 @@ router.patch('/transactions/:id', authenticate, (req, res) => {
     const updates = {};
     const { title, amount, category, note, date, isRecurring, memberId } = req.body;
     if (title       !== undefined) updates.title        = title.trim();
-    if (amount      !== undefined) updates.amount       = parseFloat(amount);
+    if (amount !== undefined) {
+      const parsedAmount = parseFloat(amount);
+      if (!Number.isFinite(parsedAmount)) return res.status(400).json({ error: 'Amount must be a valid number' });
+      updates.amount = parsedAmount;
+    }
     if (category    !== undefined) updates.category     = category;
     if (note        !== undefined) updates.note         = note?.trim() || '';
     if (date        !== undefined) updates.date         = date;
     if (isRecurring !== undefined) updates.is_recurring = isRecurring ? 1 : 0;
-    if (memberId    !== undefined) updates.member_id    = memberId;
+    if (memberId !== undefined) {
+      const memberInGroup = db.prepare('SELECT id FROM memberships WHERE id = ? AND group_id = ?').get(memberId, txn.group_id);
+      if (!memberInGroup) return res.status(400).json({ error: 'Member does not belong to this group' });
+      updates.member_id = memberId;
+    }
 
     if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'No updates provided' });
 

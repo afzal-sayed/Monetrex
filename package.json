@@ -3,12 +3,15 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
-    "dev": "concurrently \"vite\" \"node server/index.js\"",
+    "dev": "concurrently \"vite\" \"node --env-file=.env server/index.js\"",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "server": "node server/index.js"
+    "server": "node --env-file=.env server/index.js"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
@@ -17,8 +20,12 @@
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^11.10.0",
     "clsx": "^2.1.1",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "csrf-csrf": "^4.0.3",
     "express": "^4.19.2",
+    "express-rate-limit": "^8.5.1",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^1.7.0",
     "postcss": "^8.5.9",
@@ -26,6 +33,7 @@
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.14.0",
     "recharts": "^3.8.1",
+    "resend": "^6.12.3",
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {

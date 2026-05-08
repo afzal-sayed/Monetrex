@@ -1,6 +1,6 @@
 import React, { createContext, useEffect, useCallback, useMemo } from 'react';
 import { computeMonthlyData } from '../utils/helpers';
-import { apiFetch, getToken, TOKEN_KEY, GROUP_KEY } from '../utils/api';
+import { apiFetch, fetchCsrfToken, GROUP_KEY } from '../utils/api';
 import { useUISlice }   from './slices/useUISlice';
 import { useAuthSlice } from './slices/useAuthSlice';
 import { useDataSlice } from './slices/useDataSlice';
@@ -14,7 +14,9 @@ export const AppProvider = ({ children }) => {
   const auth = useAuthSlice({ showToast: ui.showToast, setIsLoading: ui.setIsLoading });
   const data = useDataSlice({ showToast: ui.showToast });
 
-  // Destructure to give hooks stable, named dependencies
+  // Pre-fetch CSRF token on mount so the first mutation has it ready
+  useEffect(() => { fetchCsrfToken(); }, []);
+
   const { showToast, setIsLoading, theme, toggleTheme, toast, isLoading } = ui;
   const { user, setUser, authReady, login, signup, updateUser, changePassword } = auth;
   const {
@@ -27,13 +29,13 @@ export const AppProvider = ({ children }) => {
   } = data;
 
   // ── Fetch all app data ────────────────────────────────────────────────────
-  const fetchData = useCallback(async () => {
-    if (!getToken()) { setIsLoading(false); return; }
+  const fetchData = useCallback(async (months = 12) => {
     setIsLoading(true);
     try {
-      const res = await apiFetch('/data');
+      const param = months >= 999 ? '' : `?months=${months}`;
+      const res = await apiFetch(`/data${param}`);
       if (!res.ok) {
-        if (res.status === 401) { localStorage.removeItem(TOKEN_KEY); setUser(null); }
+        if (res.status === 401) setUser(null);
         setIsLoading(false);
         return;
       }
@@ -41,14 +43,17 @@ export const AppProvider = ({ children }) => {
       setGroups(d.groups || []);
       setFamily(d.memberships || []);
       setTransactions(d.transactions || []);
+
       const budgetMap = {};
       (d.budgets || []).forEach((b) => {
         if (!budgetMap[b.group_id]) budgetMap[b.group_id] = {};
-        budgetMap[b.group_id][b.category] = b.amount;
+        const mKey = b.month || 'default';
+        if (!budgetMap[b.group_id][mKey]) budgetMap[b.group_id][mKey] = {};
+        budgetMap[b.group_id][mKey][b.category] = b.amount;
       });
       setBudgets(budgetMap);
     } catch (e) {
-      console.error('fetchData error:', e);
+      if (import.meta.env.DEV) console.error('fetchData error:', e);
       showToast('Failed to load data. Is the server running?', 'error');
     } finally {
       setIsLoading(false);
@@ -109,8 +114,9 @@ export const AppProvider = ({ children }) => {
   );
 
   // ── Cross-cutting auth actions ─────────────────────────────────────────
-  const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
+  const logout = useCallback(async () => {
+    // Ask the server to revoke the JTI and clear the HttpOnly cookie
+    try { await apiFetch('/auth/logout', { method: 'POST' }); } catch { /* ignore network errors */ }
     localStorage.removeItem(GROUP_KEY);
     setUser(null);
     clearAll();
@@ -125,7 +131,7 @@ export const AppProvider = ({ children }) => {
         showToast(d.error || 'Failed to delete account', 'error');
         return false;
       }
-      logout();
+      await logout();
       return true;
     } catch {
       showToast('Failed to delete account', 'error');
@@ -133,7 +139,6 @@ export const AppProvider = ({ children }) => {
     }
   }, [logout, showToast]);
 
-  // leaveGroup needs the current user id from auth slice
   const leaveGroup = useCallback(
     (groupId) => leaveGroupRaw(groupId, user?.id),
     [leaveGroupRaw, user?.id]
@@ -171,6 +176,7 @@ export const AppProvider = ({ children }) => {
 
       // Loading / Toast
       isLoading, toast, showToast,
+      fetchData,
     }}>
       {children}
     </AppContext.Provider>

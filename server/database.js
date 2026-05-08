@@ -66,9 +66,27 @@ db.exec(`
     group_id TEXT NOT NULL,
     category TEXT NOT NULL,
     amount   REAL NOT NULL,
-    UNIQUE(group_id, category),
+    month    TEXT NOT NULL DEFAULT 'default',
+    UNIQUE(group_id, month, category),
     FOREIGN KEY (group_id) REFERENCES groups_tbl(id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS revoked_tokens (
+    jti        TEXT PRIMARY KEY,
+    revoked_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    token      TEXT PRIMARY KEY,
+    user_id    TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
 `);
+
+// Migrate existing budgets table — add month column if missing (idempotent)
+try {
+  db.exec(`ALTER TABLE budgets ADD COLUMN month TEXT NOT NULL DEFAULT 'default'`);
+} catch { /* column already exists */ }
 
 export default db;

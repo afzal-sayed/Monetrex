@@ -1,27 +1,25 @@
 import { useState, useEffect } from 'react';
-import { apiFetch, getToken, TOKEN_KEY } from '../../utils/api';
+import { apiFetch } from '../../utils/api';
 
 export const useAuthSlice = ({ showToast, setIsLoading }) => {
   const [user,      setUser]      = useState(null);
   const [authReady, setAuthReady] = useState(false);
 
-  // ── Initial token validation ─────────────────────────────────────────────
+  // ── Initial session validation via HttpOnly cookie ────────────────────────
   useEffect(() => {
     const validate = async () => {
-      const token = getToken();
-      if (!token) { setAuthReady(true); setIsLoading(false); return; }
       try {
         const res = await apiFetch('/me');
         if (res.ok) {
           const { user: u } = await res.json();
           setUser(u);
-        } else {
-          localStorage.removeItem(TOKEN_KEY);
         }
+        // 401 means no valid cookie — not an error, just not logged in
       } catch {
         // Network error — don't log out, just wait
       } finally {
         setAuthReady(true);
+        setIsLoading(false);
       }
     };
     validate();
@@ -32,7 +30,7 @@ export const useAuthSlice = ({ showToast, setIsLoading }) => {
       const res  = await apiFetch('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
       const data = await res.json();
       if (!res.ok) return { success: false, error: data.error || 'Login failed' };
-      localStorage.setItem(TOKEN_KEY, data.token);
+      // Cookie is set by the server — no token to store client-side
       setUser(data.user);
       showToast(`Welcome back, ${data.user.name}!`);
       return { success: true };
@@ -46,7 +44,7 @@ export const useAuthSlice = ({ showToast, setIsLoading }) => {
       const res  = await apiFetch('/auth/signup', { method: 'POST', body: JSON.stringify({ name, email, password }) });
       const data = await res.json();
       if (!res.ok) return { success: false, error: data.error || 'Signup failed' };
-      localStorage.setItem(TOKEN_KEY, data.token);
+      // Cookie is set by the server — no token to store client-side
       setUser(data.user);
       showToast(`Welcome to Monetrex, ${data.user.name}!`);
       return { success: true };

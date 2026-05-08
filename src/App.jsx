@@ -9,6 +9,7 @@ import { Auth } from './pages/Auth';
 import { Analytics } from './pages/Analytics';
 import { Family } from './pages/Family';
 import { Settings } from './pages/Settings';
+import { ResetPassword } from './pages/ResetPassword';
 import { Toast } from './components/ui/Toast';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
@@ -23,7 +24,7 @@ class ErrorBoundary extends React.Component {
     return { hasError: true, error };
   }
   componentDidCatch(error, info) {
-    console.error('React error boundary caught:', error, info);
+    if (import.meta.env.DEV) console.error('React error boundary caught:', error, info);
   }
   render() {
     if (this.state.hasError) {
@@ -70,6 +71,7 @@ function AppInner() {
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard"    element={<Dashboard />}    />
