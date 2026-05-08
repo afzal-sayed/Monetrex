@@ -53,9 +53,11 @@ app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(cookieParser());
 app.use(express.json());
 app.use('/api', apiLimiter);
-app.use(doubleCsrfProtection);
 
 app.get('/api/csrf-token', (req, res) => res.json({ token: generateCsrfToken(req, res) }));
+app.get('/api/health', (_, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
+
+app.use('/api', doubleCsrfProtection);
 
 app.use('/api/auth',         authRoutes);
 app.use('/api/me',           userRoutes);
@@ -63,8 +65,6 @@ app.use('/api/data',         dataRoutes);
 app.use('/api/groups',       groupRoutes);
 app.use('/api',              transactionRoutes);
 app.use('/api/groups',       budgetRoutes);
-
-app.get('/api/health', (_, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
