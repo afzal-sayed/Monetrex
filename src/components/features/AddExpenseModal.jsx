@@ -5,14 +5,14 @@ import { Button } from '../ui/Button';
 import { Toggle } from '../ui/Toggle';
 import { useAppContext } from '../../context/useAppContext';
 import { IndianRupee, Tag, FileText, Loader2, Users, CalendarDays, StickyNote, RefreshCw } from 'lucide-react';
-import { CATEGORIES } from '../../utils/helpers';
+import { CATEGORIES, INCOME_CATEGORIES } from '../../utils/helpers';
 
 const today = () => new Date().toISOString().split('T')[0];
 
-const emptyForm = (family) => ({
+const emptyForm = (family, incomeType = false) => ({
   title:       '',
   amount:      '',
-  category:    'General',
+  category:    incomeType ? 'Salary' : 'General',
   memberId:    family.length > 0 ? family[0].id : '',
   note:        '',
   date:        today(),
@@ -30,16 +30,17 @@ export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
   useEffect(() => {
     if (!isOpen) return;
     if (initialData) {
+      const txnType = initialData.amount < 0 ? 'expense' : 'income';
       setForm({
         title:       initialData.title       || '',
         amount:      String(Math.abs(initialData.amount) || ''),
-        category:    initialData.category    || 'General',
+        category:    initialData.category    || (txnType === 'income' ? 'Salary' : 'General'),
         memberId:    initialData.member_id   || (family[0]?.id ?? ''),
         note:        initialData.note        || '',
         date:        initialData.date        || today(),
         isRecurring: Boolean(initialData.is_recurring),
       });
-      setType(initialData.amount < 0 ? 'expense' : 'income');
+      setType(txnType);
     } else {
       setForm(emptyForm(family));
       setType('expense');
@@ -68,7 +69,7 @@ export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
     const payload = {
       title:       form.title.trim(),
       amount:      numericAmount,
-      category:    type === 'income' ? 'Income' : form.category,
+      category:    form.category,
       memberId:    form.memberId || (family[0]?.id ?? ''),
       note:        form.note.trim(),
       date:        form.date,
@@ -111,7 +112,10 @@ export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
                     : 'bg-secondary text-white shadow-lg shadow-emerald-500/25'
                   : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
               }`}
-              onClick={() => setType(t)}
+              onClick={() => {
+                setType(t);
+                setForm((f) => ({ ...f, category: t === 'income' ? 'Salary' : 'General' }));
+              }}
             >
               {t === 'expense' ? '− Expense' : '+ Income'}
             </button>
@@ -144,34 +148,31 @@ export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
             type="date"
             value={form.date}
             onChange={(e) => set('date', e.target.value)}
-            max={today()}
           />
         </div>
 
-        {/* Category (expenses only) */}
-        {type === 'expense' && (
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1 flex items-center gap-2">
-              <Tag size={14} /> Category
-            </label>
-            <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1 scrollbar-thin">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-                    form.category === cat
-                      ? 'bg-primary text-white shadow-md shadow-primary/25'
-                      : 'bg-slate-100 dark:bg-white/[0.07] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.12]'
-                  }`}
-                  onClick={() => set('category', cat)}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
+        {/* Category */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1 flex items-center gap-2">
+            <Tag size={14} /> Category
+          </label>
+          <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1 scrollbar-thin">
+            {(type === 'income' ? INCOME_CATEGORIES : CATEGORIES).map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                  form.category === cat
+                    ? 'bg-primary text-white shadow-md shadow-primary/25'
+                    : 'bg-slate-100 dark:bg-white/[0.07] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.12]'
+                }`}
+                onClick={() => set('category', cat)}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
-        )}
+        </div>
 
         {/* Member selector */}
         {family.length > 0 && (
@@ -214,10 +215,13 @@ export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
         </div>
 
         {/* Recurring toggle */}
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-            <RefreshCw size={14} />
-            <span>Recurring transaction</span>
+        <div className="flex items-start justify-between px-1 gap-4">
+          <div className="flex items-start gap-2">
+            <RefreshCw size={14} className="text-slate-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm text-slate-700 dark:text-slate-300">Mark as recurring</p>
+              <p className="text-[11px] text-slate-400 leading-tight mt-0.5">Tags this entry as a repeating cost — does not auto-create future transactions.</p>
+            </div>
           </div>
           <Toggle checked={form.isRecurring} onChange={(v) => set('isRecurring', v)} />
         </div>

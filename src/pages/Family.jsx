@@ -5,9 +5,10 @@ import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import {
   UserPlus, Plus, Users, User, Mail, ArrowUpRight,
-  ArrowDownRight, ChevronRight, Crown, Shield, LogOut, UserMinus, Pencil,
+  ArrowDownRight, ChevronRight, Crown, Shield, LogOut, UserMinus, Pencil, Clock,
 } from 'lucide-react';
 import { useAppContext } from '../context/useAppContext';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { CATEGORY_COLORS, formatDate } from '../utils/helpers';
 
 const roleIcon = (role) => {
@@ -30,6 +31,7 @@ export const Family = () => {
     createGroup, isAdmin, user, currentMembership,
   } = useAppContext();
 
+  const [confirmState,     setConfirmState]     = useState(null);
   const [showInvite,       setShowInvite]       = useState(false);
   const [showCreateGroup,  setShowCreateGroup]  = useState(false);
   const [showRename,       setShowRename]       = useState(false);
@@ -101,10 +103,17 @@ export const Family = () => {
     setShowCreateGroup(false);
   };
 
-  const handleRemoveMember = async (member) => {
-    if (!window.confirm(`Remove ${displayName(member)} from this group? Their transactions will remain.`)) return;
-    const ok = await removeFamilyMember(member.id);
-    if (ok) setSelectedMember(null);
+  const handleRemoveMember = (member) => {
+    setConfirmState({
+      title: 'Remove member?',
+      message: `Remove ${displayName(member)} from this group? Their transactions will remain.`,
+      confirmLabel: 'Remove',
+      danger: true,
+      onConfirm: async () => {
+        const ok = await removeFamilyMember(member.id);
+        if (ok) setSelectedMember(null);
+      },
+    });
   };
 
   const openRename = () => {
@@ -122,13 +131,17 @@ export const Family = () => {
     if (ok) setShowRename(false);
   };
 
-  const handleLeaveGroup = async () => {
+  const handleLeaveGroup = () => {
     const groupName = groups.find((g) => g.id === activeGroupId)?.name || 'this group';
-    const msg = isOwner
-      ? `Delete "${groupName}"? This will permanently delete the group, all its members, transactions, and budgets. This cannot be undone.`
-      : `Leave "${groupName}"? You will lose access to all shared transactions.`;
-    if (!window.confirm(msg)) return;
-    await leaveGroup(activeGroupId);
+    setConfirmState({
+      title: isOwner ? `Delete "${groupName}"?` : `Leave "${groupName}"?`,
+      message: isOwner
+        ? 'This will permanently delete the group, all its members, transactions, and budgets.'
+        : 'You will lose access to all shared transactions in this group.',
+      confirmLabel: isOwner ? 'Delete Group' : 'Leave Group',
+      danger: true,
+      onConfirm: () => leaveGroup(activeGroupId),
+    });
   };
 
   if (isLoading) {
@@ -234,7 +247,9 @@ export const Family = () => {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className={`w-11 h-11 rounded-full flex items-center justify-center text-lg font-bold border-2 ${
-                      member.role === 'Owner'
+                      member.user_id === null
+                        ? 'bg-slate-100 dark:bg-white/[0.05] border-dashed border-slate-300 dark:border-white/20 text-slate-400'
+                        : member.role === 'Owner'
                         ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.2)]'
                         : 'bg-slate-100 dark:bg-white/[0.07] border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-300'
                     }`}>
@@ -242,9 +257,14 @@ export const Family = () => {
                     </div>
                     <div>
                       <p className="font-bold text-slate-900 dark:text-white">{displayName(member)}</p>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${roleBadge(member.role)}`}>
-                        {roleIcon(member.role)} {member.role}
-                      </span>
+                      {member.user_id === null
+                        ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-500 dark:text-amber-400">
+                            <Clock size={9} /> Pending
+                          </span>
+                        : <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${roleBadge(member.role)}`}>
+                            {roleIcon(member.role)} {member.role}
+                          </span>
+                      }
                     </div>
                   </div>
                   <ChevronRight size={16} className="text-slate-400" />
@@ -447,6 +467,8 @@ export const Family = () => {
           </div>
         </form>
       </Modal>
+
+      <ConfirmModal state={confirmState} onClose={() => setConfirmState(null)} />
     </div>
   );
 };

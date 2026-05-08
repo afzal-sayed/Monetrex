@@ -16,7 +16,7 @@ export const useAuthSlice = ({ showToast, setIsLoading }) => {
         }
         // 401 means no valid cookie — not an error, just not logged in
       } catch {
-        // Network error — don't log out, just wait
+        // Network error — don't log out, just treat as not ready
       } finally {
         setAuthReady(true);
         setIsLoading(false);

@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import {
   Search, Download, Trash2, Edit2, Plus, FileSpreadsheet,
-  FileJson, ArrowUpDown, ArrowUp, ArrowDown, Repeat, Filter,
+  FileJson, ArrowUpDown, ArrowUp, ArrowDown, Repeat, Filter, CalendarDays,
 } from 'lucide-react';
 import { useAppContext } from '../context/useAppContext';
 import { AddExpenseModal } from '../components/features/AddExpenseModal';
@@ -24,6 +25,9 @@ export const Transactions = () => {
   const [searchTerm,     setSearchTerm]     = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [memberFilter,   setMemberFilter]   = useState('All');
+  const [recurringOnly,  setRecurringOnly]  = useState(false);
+  const [dateFrom,       setDateFrom]       = useState('');
+  const [dateTo,         setDateTo]         = useState('');
   const [isModalOpen,    setIsModalOpen]    = useState(false);
   const [showExport,     setShowExport]     = useState(false);
   const [showFilters,    setShowFilters]    = useState(false);
@@ -31,6 +35,7 @@ export const Transactions = () => {
   const [sortBy,         setSortBy]         = useState('date');
   const [sortDir,        setSortDir]        = useState('desc');
   const [page,           setPage]           = useState(1);
+  const [confirmState,   setConfirmState]   = useState(null);
   const PER_PAGE = 20;
 
   const exportRef = useRef(null);
@@ -44,17 +49,19 @@ export const Transactions = () => {
     return () => document.removeEventListener('mousedown', handler);
   }, [showExport]);
 
-  const prevFilters = React.useRef({ searchTerm, categoryFilter, memberFilter, sortBy, sortDir });
+  const prevFilters = React.useRef({ searchTerm, categoryFilter, memberFilter, recurringOnly, dateFrom, dateTo, sortBy, sortDir });
   React.useLayoutEffect(() => {
     const prev = prevFilters.current;
     if (
       prev.searchTerm !== searchTerm || prev.categoryFilter !== categoryFilter ||
-      prev.memberFilter !== memberFilter || prev.sortBy !== sortBy || prev.sortDir !== sortDir
+      prev.memberFilter !== memberFilter || prev.recurringOnly !== recurringOnly ||
+      prev.dateFrom !== dateFrom || prev.dateTo !== dateTo ||
+      prev.sortBy !== sortBy || prev.sortDir !== sortDir
     ) {
-      prevFilters.current = { searchTerm, categoryFilter, memberFilter, sortBy, sortDir };
+      prevFilters.current = { searchTerm, categoryFilter, memberFilter, recurringOnly, dateFrom, dateTo, sortBy, sortDir };
       setPage(1);
     }
-  }, [searchTerm, categoryFilter, memberFilter, sortBy, sortDir]);
+  }, [searchTerm, categoryFilter, memberFilter, recurringOnly, dateFrom, dateTo, sortBy, sortDir]);
 
   const categories = useMemo(
     () => ['All', ...new Set(transactions.map((t) => t.category))],
@@ -70,10 +77,13 @@ export const Transactions = () => {
     const term = searchTerm.toLowerCase();
     return transactions
       .filter((t) => {
-        const matchSearch = t.title.toLowerCase().includes(term) || t.note?.toLowerCase().includes(term);
-        const matchCat    = categoryFilter === 'All' || t.category === categoryFilter;
-        const matchMem    = memberFilter   === 'All' || t.member_id === memberFilter;
-        return matchSearch && matchCat && matchMem;
+        const matchSearch    = t.title.toLowerCase().includes(term) || t.note?.toLowerCase().includes(term);
+        const matchCat       = categoryFilter === 'All' || t.category === categoryFilter;
+        const matchMem       = memberFilter   === 'All' || t.member_id === memberFilter;
+        const matchRecurring = !recurringOnly || t.is_recurring === 1;
+        const matchFrom      = !dateFrom || t.date >= dateFrom;
+        const matchTo        = !dateTo   || t.date <= dateTo;
+        return matchSearch && matchCat && matchMem && matchRecurring && matchFrom && matchTo;
       })
       .sort((a, b) => {
         let va = a[sortBy], vb = b[sortBy];
@@ -83,7 +93,7 @@ export const Transactions = () => {
         if (va > vb) return sortDir === 'asc' ?  1 : -1;
         return 0;
       });
-  }, [transactions, searchTerm, categoryFilter, memberFilter, sortBy, sortDir]);
+  }, [transactions, searchTerm, categoryFilter, memberFilter, recurringOnly, dateFrom, dateTo, sortBy, sortDir]);
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
   const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
@@ -109,12 +119,20 @@ export const Transactions = () => {
   const openNew  = ()    => { setEditingTxn(null); setIsModalOpen(true); };
 
   const handleDelete = (txn) => {
-    if (window.confirm(`Delete "${txn.title}"? This cannot be undone.`)) {
-      deleteTransaction(txn.id);
-    }
+    setConfirmState({
+      title: 'Delete transaction?',
+      message: `"${txn.title}" will be permanently removed. This cannot be undone.`,
+      confirmLabel: 'Delete',
+      danger: true,
+      onConfirm: () => deleteTransaction(txn.id),
+    });
   };
 
-  const activeFilterCount = (categoryFilter !== 'All' ? 1 : 0) + (memberFilter !== 'All' ? 1 : 0);
+  const activeFilterCount =
+    (categoryFilter !== 'All' ? 1 : 0) +
+    (memberFilter   !== 'All' ? 1 : 0) +
+    (recurringOnly           ? 1 : 0) +
+    (dateFrom || dateTo      ? 1 : 0);
 
   if (isLoading) {
     return (
@@ -196,21 +214,51 @@ export const Transactions = () => {
 
           {/* Desktop: always-visible filters / Mobile: collapsible */}
           <div className={`space-y-3 ${showFilters ? 'block' : 'hidden md:block'}`}>
-            {/* Member filter (admin only) */}
-            {isAdmin && family.length > 0 && (
-              <select
-                value={memberFilter}
-                onChange={(e) => setMemberFilter(e.target.value)}
-                className="w-full md:w-auto px-3 py-2 rounded-xl text-sm font-medium bg-slate-50 dark:bg-white/[0.05] text-slate-700 dark:text-slate-200 border border-slate-200/50 dark:border-white/10 outline-none focus:border-primary transition-colors"
-              >
-                <option value="All">All Members</option>
-                {family.map((m) => (
-                  <option key={m.id} value={m.id}>{m.user_name || m.name}</option>
-                ))}
-              </select>
-            )}
+            {/* Top row: member filter + date range */}
+            <div className="flex flex-wrap gap-2 items-center">
+              {isAdmin && family.length > 0 && (
+                <select
+                  value={memberFilter}
+                  onChange={(e) => setMemberFilter(e.target.value)}
+                  className="px-3 py-2 rounded-xl text-sm font-medium bg-slate-50 dark:bg-white/[0.05] text-slate-700 dark:text-slate-200 border border-slate-200/50 dark:border-white/10 outline-none focus:border-primary transition-colors"
+                >
+                  <option value="All">All Members</option>
+                  {family.map((m) => (
+                    <option key={m.id} value={m.id}>{m.user_name || m.name}</option>
+                  ))}
+                </select>
+              )}
+              {/* Date range */}
+              <div className="flex items-center gap-1.5">
+                <CalendarDays size={14} className="text-slate-400 shrink-0" />
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="px-2.5 py-1.5 rounded-xl text-xs bg-slate-50 dark:bg-white/[0.05] text-slate-700 dark:text-slate-200 border border-slate-200/50 dark:border-white/10 outline-none focus:border-primary transition-colors"
+                  title="From date"
+                />
+                <span className="text-slate-400 text-xs">–</span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="px-2.5 py-1.5 rounded-xl text-xs bg-slate-50 dark:bg-white/[0.05] text-slate-700 dark:text-slate-200 border border-slate-200/50 dark:border-white/10 outline-none focus:border-primary transition-colors"
+                  title="To date"
+                />
+                {(dateFrom || dateTo) && (
+                  <button
+                    onClick={() => { setDateFrom(''); setDateTo(''); }}
+                    className="text-xs text-slate-400 hover:text-red-400 transition-colors px-1"
+                    title="Clear dates"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
 
-            {/* Category chips — horizontal scroll on mobile */}
+            {/* Category + Recurring chips */}
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mb-1">
               {categories.map((cat) => (
                 <button
@@ -232,6 +280,17 @@ export const Transactions = () => {
                   {cat}
                 </button>
               ))}
+              {/* Recurring chip */}
+              <button
+                onClick={() => setRecurringOnly((v) => !v)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
+                  recurringOnly
+                    ? 'bg-primary text-white shadow-md'
+                    : 'bg-slate-100 dark:bg-white/[0.07] text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/[0.12]'
+                }`}
+              >
+                <Repeat size={11} /> Recurring
+              </button>
             </div>
           </div>
         </div>
@@ -453,6 +512,7 @@ export const Transactions = () => {
         onClose={() => { setIsModalOpen(false); setEditingTxn(null); }}
         initialData={editingTxn}
       />
+      <ConfirmModal state={confirmState} onClose={() => setConfirmState(null)} />
     </div>
   );
 };

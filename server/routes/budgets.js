@@ -8,7 +8,7 @@ const router = Router();
 router.put('/:groupId/budgets', authenticate, (req, res) => {
   try {
     const { groupId } = req.params;
-    const { budgets } = req.body;
+    const { budgets, month = 'default' } = req.body;
 
     if (!budgets || typeof budgets !== 'object') {
       return res.status(400).json({ error: 'Invalid budgets payload' });
@@ -22,22 +22,22 @@ router.put('/:groupId/budgets', authenticate, (req, res) => {
     }
 
     const upsert = db.prepare(`
-      INSERT INTO budgets (id, group_id, category, amount) VALUES (?, ?, ?, ?)
-      ON CONFLICT(group_id, category) DO UPDATE SET amount = excluded.amount
+      INSERT INTO budgets (id, group_id, category, month, amount) VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(group_id, category, month) DO UPDATE SET amount = excluded.amount
     `);
-    const remove = db.prepare('DELETE FROM budgets WHERE group_id = ? AND category = ?');
+    const remove = db.prepare('DELETE FROM budgets WHERE group_id = ? AND category = ? AND month = ?');
 
     const applyBudgets = db.transaction((entries) => {
       for (const [category, amount] of entries) {
         const num = parseFloat(amount);
-        if (num > 0) upsert.run(genId(), groupId, category, num);
-        else remove.run(groupId, category);
+        if (num > 0) upsert.run(genId(), groupId, category, month, num);
+        else remove.run(groupId, category, month);
       }
     });
 
     applyBudgets(Object.entries(budgets));
 
-    const saved = db.prepare('SELECT * FROM budgets WHERE group_id = ?').all(groupId);
+    const saved = db.prepare('SELECT * FROM budgets WHERE group_id = ? AND month = ?').all(groupId, month);
     res.json({ budgets: saved });
   } catch (e) {
     console.error('Update budgets error:', e);

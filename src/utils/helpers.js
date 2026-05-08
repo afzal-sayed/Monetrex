@@ -139,6 +139,18 @@ export const CATEGORIES = [
   'General',
 ];
 
+export const INCOME_CATEGORIES = [
+  'Salary',
+  'Freelance',
+  'Business',
+  'Investments',
+  'Rental',
+  'Interest',
+  'Gift',
+  'Refund',
+  'Other Income',
+];
+
 export const CATEGORY_COLORS = {
   'Food':             '#10B981',
   'Dining Out':       '#F43F5E',
@@ -157,7 +169,16 @@ export const CATEGORY_COLORS = {
   'Impulse Buying':   '#DC2626',
   'Others':           '#94A3B8',
   'General':          '#6366F1',
+  // Income categories
   'Income':           '#4F46E5',
+  'Salary':           '#10B981',
+  'Freelance':        '#06B6D4',
+  'Business':         '#8B5CF6',
+  'Rental':           '#F97316',
+  'Interest':         '#059669',
+  'Gift':             '#EC4899',
+  'Refund':           '#14B8A6',
+  'Other Income':     '#94A3B8',
 };
 
 export const CATEGORY_EMOJI = {
@@ -178,5 +199,14 @@ export const CATEGORY_EMOJI = {
   'Impulse Buying':   '🛒',
   'Others':           '📂',
   'General':          '📦',
+  // Income categories
   'Income':           '💰',
+  'Salary':           '💼',
+  'Freelance':        '💻',
+  'Business':         '🏢',
+  'Rental':           '🏠',
+  'Interest':         '🏦',
+  'Gift':             '🎁',
+  'Refund':           '↩️',
+  'Other Income':     '💰',
 };
