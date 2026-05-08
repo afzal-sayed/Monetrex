@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { apiFetch, TOKEN_KEY } from '../../utils/api';
+import { apiFetch } from '../../utils/api';
 
 export const useAuthSlice = ({ showToast, setIsLoading }) => {
   const [user,      setUser]      = useState(null);
   const [authReady, setAuthReady] = useState(false);
 
-  // ── Initial session validation via cookie ────────────────────────────────
+  // ── Initial session validation via HttpOnly cookie ────────────────────────
   useEffect(() => {
     const validate = async () => {
       try {
@@ -14,11 +14,12 @@ export const useAuthSlice = ({ showToast, setIsLoading }) => {
           const { user: u } = await res.json();
           setUser(u);
         }
-        // 401 = no valid cookie → unauthenticated, that's fine
+        // 401 means no valid cookie — not an error, just not logged in
       } catch {
         // Network error — don't log out, just treat as not ready
       } finally {
         setAuthReady(true);
+        setIsLoading(false);
       }
     };
     validate();
@@ -29,8 +30,7 @@ export const useAuthSlice = ({ showToast, setIsLoading }) => {
       const res  = await apiFetch('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
       const data = await res.json();
       if (!res.ok) return { success: false, error: data.error || 'Login failed' };
-      // Cookie is set by server — nothing to store locally
-      localStorage.removeItem(TOKEN_KEY); // clean up any legacy token
+      // Cookie is set by the server — no token to store client-side
       setUser(data.user);
       showToast(`Welcome back, ${data.user.name}!`);
       return { success: true };
@@ -44,8 +44,7 @@ export const useAuthSlice = ({ showToast, setIsLoading }) => {
       const res  = await apiFetch('/auth/signup', { method: 'POST', body: JSON.stringify({ name, email, password }) });
       const data = await res.json();
       if (!res.ok) return { success: false, error: data.error || 'Signup failed' };
-      // Cookie is set by server
-      localStorage.removeItem(TOKEN_KEY);
+      // Cookie is set by the server — no token to store client-side
       setUser(data.user);
       showToast(`Welcome to Monetrex, ${data.user.name}!`);
       return { success: true };

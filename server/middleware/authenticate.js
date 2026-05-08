@@ -18,7 +18,7 @@ export const authenticate = (req, res, next) => {
   }
 
   try {
-    const payload = jwt.verify(token, JWT_SECRET);
+    const payload = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
 
     // JTI blocklist check — prune expired revocations inline (cheap, synchronous)
     if (payload.jti) {

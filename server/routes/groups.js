@@ -97,7 +97,15 @@ router.post('/:groupId/members', authenticate, (req, res) => {
       return res.status(403).json({ error: 'Only admins can invite members' });
     }
 
+    // Admins cannot assign the Owner role
+    if (requester.role === 'Admin' && role === 'Owner') {
+      return res.status(403).json({ error: 'Admins cannot assign the Owner role' });
+    }
+
     const emailLower = email.toLowerCase().trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailLower)) {
+      return res.status(400).json({ error: 'Invalid email address' });
+    }
     const alreadyMember = db.prepare(
       'SELECT id FROM memberships WHERE group_id = ? AND email = ?'
     ).get(groupId, emailLower);

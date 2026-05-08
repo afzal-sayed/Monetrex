@@ -1,6 +1,6 @@
 import React, { createContext, useEffect, useCallback, useMemo } from 'react';
 import { computeMonthlyData } from '../utils/helpers';
-import { apiFetch, GROUP_KEY } from '../utils/api';
+import { apiFetch, fetchCsrfToken, GROUP_KEY } from '../utils/api';
 import { useUISlice }   from './slices/useUISlice';
 import { useAuthSlice } from './slices/useAuthSlice';
 import { useDataSlice } from './slices/useDataSlice';
@@ -13,6 +13,9 @@ export const AppProvider = ({ children }) => {
   const ui   = useUISlice();
   const auth = useAuthSlice({ showToast: ui.showToast, setIsLoading: ui.setIsLoading });
   const data = useDataSlice({ showToast: ui.showToast });
+
+  // Pre-fetch CSRF token on mount so the first mutation has it ready
+  useEffect(() => { fetchCsrfToken(); }, []);
 
   const { showToast, setIsLoading, theme, toggleTheme, toasts, isLoading } = ui;
   const { user, setUser, authReady, login, signup, updateUser, changePassword } = auth;
@@ -32,7 +35,7 @@ export const AppProvider = ({ children }) => {
       const param = months >= 999 ? '' : `?months=${months}`;
       const res = await apiFetch(`/data${param}`);
       if (!res.ok) {
-        if (res.status === 401) { setUser(null); }
+        if (res.status === 401) setUser(null);
         setIsLoading(false);
         return;
       }
@@ -41,7 +44,6 @@ export const AppProvider = ({ children }) => {
       setFamily(d.memberships || []);
       setTransactions(d.transactions || []);
 
-      // Budget map: { groupId: { month: { category: amount } } }
       const budgetMap = {};
       (d.budgets || []).forEach((b) => {
         if (!budgetMap[b.group_id]) budgetMap[b.group_id] = {};
@@ -51,7 +53,7 @@ export const AppProvider = ({ children }) => {
       });
       setBudgets(budgetMap);
     } catch (e) {
-      console.error('fetchData error:', e);
+      if (import.meta.env.DEV) console.error('fetchData error:', e);
       showToast('Failed to load data. Is the server running?', 'error');
     } finally {
       setIsLoading(false);
@@ -115,9 +117,8 @@ export const AppProvider = ({ children }) => {
 
   // ── Cross-cutting auth actions ─────────────────────────────────────────
   const logout = useCallback(async () => {
-    try {
-      await apiFetch('/auth/logout', { method: 'POST' });
-    } catch { /* ignore network errors on logout */ }
+    // Ask the server to revoke the JTI and clear the HttpOnly cookie
+    try { await apiFetch('/auth/logout', { method: 'POST' }); } catch { /* ignore network errors */ }
     localStorage.removeItem(GROUP_KEY);
     setUser(null);
     clearAll();
@@ -178,8 +179,6 @@ export const AppProvider = ({ children }) => {
 
       // Loading / Toast
       isLoading, toasts, showToast,
-
-      // Data refresh
       fetchData,
     }}>
       {children}
