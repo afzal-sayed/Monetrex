@@ -17,7 +17,7 @@ export const AppProvider = ({ children }) => {
   // Pre-fetch CSRF token on mount so the first mutation has it ready
   useEffect(() => { fetchCsrfToken(); }, []);
 
-  const { showToast, setIsLoading, theme, toggleTheme, toast, isLoading } = ui;
+  const { showToast, setIsLoading, theme, toggleTheme, toasts, isLoading } = ui;
   const { user, setUser, authReady, login, signup, updateUser, changePassword } = auth;
   const {
     transactions, setTransactions, family, setFamily,
@@ -103,10 +103,12 @@ export const AppProvider = ({ children }) => {
     return groupTxns.filter((t) => t.member_id === currentMembership?.id);
   }, [transactions, user, activeGroupId, isAdmin, currentMembership]);
 
-  const activeBudgets = useMemo(
-    () => budgets[activeGroupId] || {},
-    [budgets, activeGroupId]
-  );
+  // Budgets: current month → fallback to 'default'
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const activeBudgets = useMemo(() => {
+    const groupBudgets = budgets[activeGroupId] || {};
+    return groupBudgets[currentMonth] || groupBudgets['default'] || {};
+  }, [budgets, activeGroupId, currentMonth]);
 
   const monthlyData = useMemo(
     () => computeMonthlyData(visibleTransactions),
@@ -170,12 +172,13 @@ export const AppProvider = ({ children }) => {
 
       // Budgets
       budgets: activeBudgets, updateBudgets,
+      currentMonth,
 
       // Chart data
       monthlyData,
 
       // Loading / Toast
-      isLoading, toast, showToast,
+      isLoading, toasts, showToast,
       fetchData,
     }}>
       {children}

@@ -46,6 +46,7 @@ const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
 });
 /* eslint-enable no-undef */
 
+
 const app = express();
 app.use(helmet());
 app.use(cors({ origin: allowedOrigins, credentials: true }));

@@ -25,7 +25,6 @@ const authLimiter = rateLimit({
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 
- 
 const COOKIE_OPTS = {
   httpOnly: true,
   secure:   IS_PROD,
@@ -33,7 +32,6 @@ const COOKIE_OPTS = {
   path:     '/',
   maxAge:   7 * 24 * 60 * 60 * 1000,
 };
- 
 
 const signToken = (userId) => {
   const jti   = genJti();

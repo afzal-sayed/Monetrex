@@ -51,21 +51,27 @@ class ErrorBoundary extends React.Component {
 }
 
 // ─── Route Guards ────────────────────────────────────────────────────────────
+const AuthSpinner = () => (
+  <div className="min-h-screen flex items-center justify-center bg-bg-light dark:bg-bg-dark">
+    <div className="w-10 h-10 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+  </div>
+);
+
 const ProtectedRoute = ({ children }) => {
   const { user, authReady } = useAppContext();
-  if (!authReady) return null; // Wait for token validation
+  if (!authReady) return <AuthSpinner />;
   return user ? children : <Navigate to="/auth" replace />;
 };
 
 const AuthRoute = ({ children }) => {
   const { user, authReady } = useAppContext();
-  if (!authReady) return null;
+  if (!authReady) return <AuthSpinner />;
   return user ? <Navigate to="/dashboard" replace /> : children;
 };
 
 // ─── Inner app — needs to be inside AppProvider to read toast state ──────────
 function AppInner() {
-  const { toast } = useAppContext();
+  const { toasts } = useAppContext();
   return (
     <div className="bg-bg-light dark:bg-bg-dark min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-300">
       <BrowserRouter>
@@ -83,7 +89,7 @@ function AppInner() {
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
-      <Toast toast={toast} />
+      <Toast toasts={toasts} />
       <VercelAnalytics />
       <SpeedInsights />
     </div>

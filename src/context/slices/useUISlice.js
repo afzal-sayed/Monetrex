@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 export const useUISlice = () => {
   const [theme,     setTheme]     = useState(() => localStorage.getItem('theme') || 'dark');
-  const [toast,     setToast]     = useState(null);
+  const [toasts,    setToasts]    = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -15,9 +15,15 @@ export const useUISlice = () => {
   const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
 
   const showToast = useCallback((message, type = 'success') => {
-    setToast({ message, type, id: Date.now() });
-    setTimeout(() => setToast(null), 3500);
+    const id = Date.now() + Math.random(); // unique even for rapid calls
+    setToasts((prev) => {
+      const next = [...prev, { message, type, id }];
+      return next.slice(-3); // keep newest 3
+    });
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3500);
   }, []);
 
-  return { theme, toggleTheme, toast, showToast, isLoading, setIsLoading };
+  return { theme, toggleTheme, toasts, showToast, isLoading, setIsLoading };
 };
