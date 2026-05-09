@@ -4,8 +4,10 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { doubleCsrf } from 'csrf-csrf';
-import { join } from 'path';
 import { existsSync } from 'fs';
+import { dirname } from 'path';
+import { spawn } from 'child_process';
+import { DB_PATH } from './database.js';
 import authRoutes        from './routes/auth.js';
 import userRoutes        from './routes/users.js';
 import dataRoutes        from './routes/data.js';
@@ -63,9 +65,14 @@ app.get('/api/health', (_, res) => res.json({ status: 'ok', ts: new Date().toISO
 app.get('/admin/download-db', (req, res) => {
   const adminSecret = process.env.ADMIN_SECRET;
   if (!adminSecret || req.query.secret !== adminSecret) return res.status(403).send('Forbidden');
-  const dbPath = join(process.env.DATA_DIR || join(import.meta.dirname, 'data'), 'monetrex.db');
-  if (!existsSync(dbPath)) return res.status(404).send('Database file not found');
-  res.download(dbPath, 'monetrex.db');
+  const dataDir = dirname(DB_PATH);
+  if (!existsSync(dataDir)) return res.status(404).send('Data directory not found');
+  res.setHeader('Content-Type', 'application/gzip');
+  res.setHeader('Content-Disposition', 'attachment; filename="monetrex-data.tar.gz"');
+  const tar = spawn('tar', ['czf', '-', '-C', dataDir, '.']);
+  tar.stdout.pipe(res);
+  tar.stderr.on('data', d => console.error('tar:', d.toString()));
+  tar.on('error', err => { console.error('tar error:', err); res.destroy(); });
 });
 /* eslint-enable no-undef */
 
