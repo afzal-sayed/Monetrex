@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Target, Settings2, TrendingUp, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Target, Settings2, TrendingUp, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { useAppContext } from '../context/useAppContext';
 import { CATEGORY_EMOJI, CATEGORY_COLORS } from '../utils/helpers';
@@ -12,37 +12,59 @@ const STATUS_COLORS = {
   over:     { bar: 'bg-red-500',     text: 'text-red-600 dark:text-red-400',       badge: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20'           },
 };
 
-const STATUS_LABELS = {
-  safe:     'On track',
-  warning:  'Warning',
-  critical: 'Critical',
-  over:     'Over budget!',
-};
-
-const STATUS_ICONS = {
-  safe:     CheckCircle2,
-  warning:  TrendingUp,
-  critical: AlertTriangle,
-  over:     AlertTriangle,
-};
+const STATUS_LABELS  = { safe: 'On track', warning: 'Warning', critical: 'Critical', over: 'Over budget!' };
+const STATUS_ICONS   = { safe: CheckCircle2, warning: TrendingUp, critical: AlertTriangle, over: AlertTriangle };
 
 const fmt = (n) => `₹${Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
+const toLabel = (ym) => {
+  const [y, m] = ym.split('-');
+  return new Date(Number(y), Number(m) - 1).toLocaleString('en-IN', { month: 'long', year: 'numeric' });
+};
+
+// Build last N months from the given anchor, newest first
+const buildMonthList = (anchor, count = 12) => {
+  const [y, m] = anchor.split('-').map(Number);
+  return Array.from({ length: count }, (_, i) => {
+    const d = new Date(y, m - 1 - i, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
+};
+
 export const Budgets = () => {
-  const { transactions, budgets: activeBudgets, currentMonth, isLoading } = useAppContext();
+  const {
+    transactions, budgetsRaw, activeGroupId, currentMonth, isLoading,
+  } = useAppContext();
+
+  const months = useMemo(() => buildMonthList(currentMonth, 12), [currentMonth]);
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+
+  const isCurrentMonth = selectedMonth === currentMonth;
+  const currentIdx     = months.indexOf(selectedMonth);
+
+  const step = (dir) => {
+    const next = currentIdx + dir;
+    if (next >= 0 && next < months.length) setSelectedMonth(months[next]);
+  };
+
+  // Budget data for the selected month (falls back to 'default' if none set)
+  const monthBudgets = useMemo(() => {
+    const groupBudgets = budgetsRaw[activeGroupId] || {};
+    return groupBudgets[selectedMonth] || groupBudgets['default'] || {};
+  }, [budgetsRaw, activeGroupId, selectedMonth]);
 
   const categorySpending = useMemo(() =>
     transactions
-      .filter((t) => t.amount < 0 && t.date?.slice(0, 7) === currentMonth)
+      .filter((t) => t.amount < 0 && t.date?.slice(0, 7) === selectedMonth)
       .reduce((acc, t) => {
         acc[t.category] = (acc[t.category] || 0) + Math.abs(t.amount);
         return acc;
       }, {}),
-    [transactions, currentMonth]
+    [transactions, selectedMonth]
   );
 
   const budgetItems = useMemo(() =>
-    Object.entries(activeBudgets)
+    Object.entries(monthBudgets)
       .filter(([, amount]) => parseFloat(amount) > 0)
       .map(([category, budget]) => {
         const spent  = categorySpending[category] || 0;
@@ -52,23 +74,20 @@ export const Budgets = () => {
         return { category, budget: limit, spent, pct, status, remaining: limit - spent };
       })
       .sort((a, b) => b.pct - a.pct),
-    [activeBudgets, categorySpending]
+    [monthBudgets, categorySpending]
   );
 
   const unbudgetedCategories = useMemo(() =>
     Object.entries(categorySpending)
-      .filter(([cat]) => !activeBudgets[cat] || parseFloat(activeBudgets[cat]) <= 0)
+      .filter(([cat]) => !monthBudgets[cat] || parseFloat(monthBudgets[cat]) <= 0)
       .sort((a, b) => b[1] - a[1]),
-    [categorySpending, activeBudgets]
+    [categorySpending, monthBudgets]
   );
 
-  const totalBudget = budgetItems.reduce((s, i) => s + i.budget, 0);
-  const totalSpent  = budgetItems.reduce((s, i) => s + i.spent,  0);
-  const overallPct  = totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0;
-  const overallStatus = overallPct > 100 ? 'over' : overallPct > 90 ? 'critical' : overallPct > 70 ? 'warning' : 'safe';
-
-  const [year, month] = currentMonth.split('-');
-  const monthLabel = new Date(Number(year), Number(month) - 1).toLocaleString('en-IN', { month: 'long', year: 'numeric' });
+  const totalBudget   = budgetItems.reduce((s, i) => s + i.budget, 0);
+  const totalSpent    = budgetItems.reduce((s, i) => s + i.spent,  0);
+  const overallPct    = totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0;
+  const overallStatus = overallPct > 90 ? (overallPct > 100 ? 'over' : 'critical') : overallPct > 70 ? 'warning' : 'safe';
 
   if (isLoading) {
     return (
@@ -87,10 +106,7 @@ export const Budgets = () => {
             <Target size={26} className="text-primary" />
             Budget Tracker
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-            Monthly spending limits for{' '}
-            <span className="font-semibold text-slate-700 dark:text-slate-300">{monthLabel}</span>
-          </p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Monthly spending limits per category</p>
         </div>
         <Link
           to="/settings"
@@ -100,6 +116,50 @@ export const Budgets = () => {
           Edit budgets
         </Link>
       </header>
+
+      {/* Month selector */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => step(1)}
+          disabled={currentIdx >= months.length - 1}
+          aria-label="Previous month"
+          className="p-2 rounded-xl border border-slate-200/60 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.07] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          <ChevronLeft size={16} />
+        </button>
+
+        <div className="flex-1">
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl border border-slate-200/60 dark:border-white/10 bg-white dark:bg-slate-900/40 text-sm font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-primary transition-colors text-center appearance-none cursor-pointer"
+          >
+            {months.map((m) => (
+              <option key={m} value={m}>
+                {toLabel(m)}{m === currentMonth ? ' (current)' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button
+          onClick={() => step(-1)}
+          disabled={currentIdx <= 0}
+          aria-label="Next month"
+          className="p-2 rounded-xl border border-slate-200/60 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.07] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          <ChevronRight size={16} />
+        </button>
+
+        {!isCurrentMonth && (
+          <button
+            onClick={() => setSelectedMonth(currentMonth)}
+            className="px-3 py-2 rounded-xl text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/15 transition-colors shrink-0"
+          >
+            Today
+          </button>
+        )}
+      </div>
 
       {/* Summary card */}
       {budgetItems.length > 0 && (
@@ -111,20 +171,21 @@ export const Budgets = () => {
                 <p className="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{fmt(totalBudget)}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">Spent So Far</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">Total Spent</p>
                 <p className={`text-2xl font-bold tabular-nums ${STATUS_COLORS[overallStatus].text}`}>{fmt(totalSpent)}</p>
               </div>
               <div className="ml-auto text-right">
                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">Remaining</p>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">
+                <p className="text-2xl font-bold tabular-nums">
                   {totalSpent > totalBudget ? (
                     <span className="text-red-500 dark:text-red-400">-{fmt(totalSpent - totalBudget)}</span>
-                  ) : fmt(totalBudget - totalSpent)}
+                  ) : (
+                    <span className="text-slate-900 dark:text-white">{fmt(totalBudget - totalSpent)}</span>
+                  )}
                 </p>
               </div>
             </div>
 
-            {/* Overall progress */}
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
                 <span>Overall usage</span>
@@ -150,13 +211,21 @@ export const Budgets = () => {
             <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
               <Target size={24} className="text-primary" />
             </div>
-            <p className="text-slate-700 dark:text-slate-200 font-semibold">No budgets set for {monthLabel}</p>
+            <p className="text-slate-700 dark:text-slate-200 font-semibold">
+              No budgets set for {toLabel(selectedMonth)}
+            </p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Set monthly spending limits in{' '}
-              <Link to="/settings" className="text-primary hover:underline font-medium">
-                Settings → Budget Goals
-              </Link>
-              .
+              {isCurrentMonth ? (
+                <>
+                  Set monthly spending limits in{' '}
+                  <Link to="/settings" className="text-primary hover:underline font-medium">
+                    Settings → Budget Goals
+                  </Link>
+                  .
+                </>
+              ) : (
+                'No budget goals were configured for this month.'
+              )}
             </p>
           </CardContent>
         </Card>
@@ -166,11 +235,11 @@ export const Budgets = () => {
       {budgetItems.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {budgetItems.map(({ category, budget, spent, pct, status, remaining }) => {
-            const colors   = STATUS_COLORS[status];
-            const emoji    = CATEGORY_EMOJI[category] || '📦';
-            const barColor = CATEGORY_COLORS[category] || '#6366F1';
+            const colors     = STATUS_COLORS[status];
+            const emoji      = CATEGORY_EMOJI[category] || '📦';
+            const barColor   = CATEGORY_COLORS[category] || '#6366F1';
             const StatusIcon = STATUS_ICONS[status];
-            const barWidth = Math.min(pct, 100);
+            const barWidth   = Math.min(pct, 100);
 
             return (
               <Card key={category} glass className="overflow-hidden">
@@ -197,7 +266,9 @@ export const Budgets = () => {
                     </div>
                     <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
                       <span>{pct.toFixed(1)}% used</span>
-                      <span className={`font-semibold ${colors.text}`}>{fmt(spent)} <span className="font-normal">of {fmt(budget)}</span></span>
+                      <span className={`font-semibold ${colors.text}`}>
+                        {fmt(spent)} <span className="font-normal">of {fmt(budget)}</span>
+                      </span>
                     </div>
                   </div>
 
@@ -226,7 +297,7 @@ export const Budgets = () => {
           <CardHeader>
             <CardTitle className="text-slate-900 dark:text-white text-base flex items-center gap-2">
               Unbudgeted Spending
-              <span className="text-xs font-normal text-slate-500 dark:text-slate-400">— categories with no limit set</span>
+              <span className="text-xs font-normal text-slate-500 dark:text-slate-400">— no limit set</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
