@@ -229,7 +229,7 @@ export const Transactions = () => {
                 </select>
               )}
               {/* Date range */}
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <CalendarDays size={14} className="text-slate-400 shrink-0" />
                 <input
                   type="date"
