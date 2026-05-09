@@ -205,6 +205,7 @@ export const Family = () => {
             <button
               onClick={openRename}
               title="Rename group"
+              aria-label="Rename group"
               className="p-2 rounded-xl text-slate-400 hover:text-primary hover:bg-primary/10 border border-slate-200/60 dark:border-white/[0.07] bg-white/50 dark:bg-white/[0.04] backdrop-blur-xl transition-all"
             >
               <Pencil size={14} />

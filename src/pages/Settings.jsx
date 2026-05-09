@@ -134,6 +134,7 @@ const BudgetSection = () => {
               />
               <button
                 onClick={() => removeRow(cat)}
+                aria-label={`Remove ${cat} budget`}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all shrink-0"
                 title="Remove budget"
               >

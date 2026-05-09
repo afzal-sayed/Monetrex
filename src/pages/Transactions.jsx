@@ -381,6 +381,7 @@ export const Transactions = () => {
                         <td className="p-4 opacity-0 group-hover:opacity-100 transition-opacity text-right">
                           <button
                             onClick={() => openEdit(txn)}
+                            aria-label={`Edit transaction: ${txn.title}`}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all mr-1"
                             title="Edit"
                           >
@@ -388,6 +389,7 @@ export const Transactions = () => {
                           </button>
                           <button
                             onClick={() => handleDelete(txn)}
+                            aria-label={`Delete transaction: ${txn.title}`}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
                             title="Delete"
                           >
@@ -457,12 +459,14 @@ export const Transactions = () => {
                       <div className="flex gap-1">
                         <button
                           onClick={() => openEdit(txn)}
+                          aria-label={`Edit transaction: ${txn.title}`}
                           className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 active:bg-blue-50 dark:active:bg-blue-500/10 transition-all"
                         >
                           <Edit2 size={14} />
                         </button>
                         <button
                           onClick={() => handleDelete(txn)}
+                          aria-label={`Delete transaction: ${txn.title}`}
                           className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 active:bg-red-50 dark:active:bg-red-500/10 transition-all"
                         >
                           <Trash2 size={14} />

@@ -12,6 +12,17 @@ export const useUISlice = () => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  // Sync theme across browser tabs
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === 'theme' && e.newValue && e.newValue !== theme) {
+        setTheme(e.newValue);
+      }
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, [theme]);
+
   const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
 
   const showToast = useCallback((message, type = 'success') => {
