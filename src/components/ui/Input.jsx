@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../../utils/cn';
 
-export const Input = React.forwardRef(({ className, label, id, icon: Icon, error, ...props }, ref) => {
+export const Input = React.forwardRef(({ className, label, id, icon: Icon, error, rightElement, ...props }, ref) => {
   const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : undefined);
   return (
     <div className="relative w-full flex flex-col gap-1.5">
@@ -26,11 +26,17 @@ export const Input = React.forwardRef(({ className, label, id, icon: Icon, error
             "focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary/50 focus-visible:bg-white dark:focus-visible:bg-slate-900/80 shadow-sm",
             "disabled:cursor-not-allowed disabled:opacity-50",
             Icon && "pl-10",
+            rightElement && "pr-10",
             error && "border-red-500 focus-visible:ring-red-500 focus-visible:border-red-500",
             className
           )}
           {...props}
         />
+        {rightElement && (
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+            {rightElement}
+          </div>
+        )}
         {/* Animated bottom gradient border effect on focus */}
         <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-linear-to-r from-primary to-accent-purple transition-all duration-300 group-focus-within:w-full rounded-b-xl opacity-70"></div>
       </div>
