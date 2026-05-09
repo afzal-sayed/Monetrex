@@ -14,7 +14,7 @@ const resend     = IS_PROD && process.env.RESEND_API_KEY ? new Resend(process.en
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'noreply@monetrex.app';
 const APP_URL    = process.env.APP_URL || 'http://localhost:5173';
 /* eslint-enable no-undef */
-const DUMMY_HASH = '$2b$12$invalidhashfortimingequalizexx.invalidhashfortimingeqxx';
+const DUMMY_HASH = bcrypt.hashSync('__dummy_timing__', 12);
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
