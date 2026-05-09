@@ -150,7 +150,7 @@ export const Dashboard = () => {
               <button
                 key={val}
                 onClick={() => setStatsPeriod(val)}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
                   statsPeriod === val
                     ? 'bg-primary text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
@@ -213,7 +213,7 @@ export const Dashboard = () => {
                 </span>
               )}
             </div>
-            <div className="h-64">
+            <div className="h-48 sm:h-64">
               {monthlyData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={monthlyData} barGap={4}>
@@ -271,7 +271,7 @@ export const Dashboard = () => {
                     {/* Legend */}
                     <div className="flex flex-col gap-1 max-h-28 overflow-y-auto scrollbar-thin pr-1">
                       {categoryData.map((entry) => (
-                        <div key={entry.name} className="flex items-center justify-between gap-2 text-[11px]">
+                        <div key={entry.name} className="flex items-center justify-between gap-2 text-xs">
                           <div className="flex items-center gap-1.5 min-w-0">
                             <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
                             <span className="text-slate-600 dark:text-slate-300 truncate">{entry.name}</span>
@@ -328,7 +328,7 @@ export const Dashboard = () => {
                         const pct = Math.min((spent / limit) * 100, 100);
                         return (
                           <div key={cat}>
-                            <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                            <div className="flex justify-between text-xs text-slate-400 mb-1">
                               <span>{cat}</span><span>{pct.toFixed(0)}%</span>
                             </div>
                             <div className="h-1.5 w-full bg-slate-200/60 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -381,7 +381,7 @@ export const Dashboard = () => {
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{txn.title}</p>
-                      <p className="text-[11px] text-slate-400">{txn.category} · {formatDate(txn.date)}</p>
+                      <p className="text-xs text-slate-400">{txn.category} · {formatDate(txn.date)}</p>
                     </div>
                   </div>
                   <span className={`text-sm font-bold tabular-nums ml-3 shrink-0 ${txn.amount > 0 ? 'text-secondary' : 'text-slate-900 dark:text-white'}`}>
