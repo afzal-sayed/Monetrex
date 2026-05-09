@@ -10,7 +10,7 @@ import { genId, genJti, safeUser, createDefaultGroup } from '../helpers.js';
 /* eslint-disable no-undef */
 const JWT_SECRET = process.env.JWT_SECRET;
 const IS_PROD    = process.env.NODE_ENV === 'production';
-const resend     = IS_PROD ? new Resend(process.env.RESEND_API_KEY) : null;
+const resend     = IS_PROD && process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'noreply@monetrex.app';
 const APP_URL    = process.env.APP_URL || 'http://localhost:5173';
 /* eslint-enable no-undef */
