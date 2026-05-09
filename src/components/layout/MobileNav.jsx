@@ -22,7 +22,7 @@ export const MobileNav = () => {
             key={item.name}
             to={item.path}
             className={({ isActive }) =>
-              `flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors ${
+              `flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
                 isActive
                   ? 'text-primary'
                   : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
@@ -42,7 +42,8 @@ export const MobileNav = () => {
 
         <button
           onClick={logout}
-          className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+          aria-label="Logout"
+          className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
         >
           <span className="p-1.5 rounded-lg">
             <LogOut size={20} />

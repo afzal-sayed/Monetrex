@@ -35,8 +35,12 @@ export const AppProvider = ({ children }) => {
       const param = months >= 999 ? '' : `?months=${months}`;
       const res = await apiFetch(`/data${param}`);
       if (!res.ok) {
-        if (res.status === 401) setUser(null);
-        setIsLoading(false);
+        if (res.status === 401) {
+          localStorage.removeItem(GROUP_KEY);
+          setUser(null);
+          clearAll();
+          return;
+        }
         return;
       }
       const d = await res.json();
@@ -58,7 +62,7 @@ export const AppProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [showToast, setIsLoading, setUser, setGroups, setFamily, setTransactions, setBudgets]);
+  }, [showToast, setIsLoading, setUser, setGroups, setFamily, setTransactions, setBudgets, clearAll]);
 
   useEffect(() => {
     if (authReady && user) fetchData();

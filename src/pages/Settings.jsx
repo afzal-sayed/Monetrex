@@ -37,7 +37,7 @@ const PasswordSection = () => {
           {error}
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input
           label="Current Password" icon={Lock} type="password"
           value={form.current} onChange={(e) => setForm({ ...form, current: e.target.value })}
@@ -73,9 +73,16 @@ const BudgetSection = () => {
   const [addAmt, setAddAmt] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Re-init rows only when the active group or month changes (not on background budget re-fetches),
+  // so in-progress edits are not wiped by background data syncs.
+  const budgetKey    = `${activeGroupId}-${currentMonth}`;
+  const budgetKeyRef = React.useRef(budgetKey);
   React.useEffect(() => {
-    setRows(Object.entries(budgets).filter(([, v]) => v > 0).map(([cat, amt]) => ({ cat, amt: String(amt) })));
-  }, [budgets]);
+    if (budgetKeyRef.current !== budgetKey) {
+      budgetKeyRef.current = budgetKey;
+      setRows(Object.entries(budgets).filter(([, v]) => v > 0).map(([cat, amt]) => ({ cat, amt: String(amt) })));
+    }
+  }, [budgetKey, budgets]);
 
   const usedCats   = new Set(rows.map((r) => r.cat));
   const availCats  = CATEGORIES.filter((c) => !usedCats.has(c));
@@ -127,6 +134,7 @@ const BudgetSection = () => {
               />
               <button
                 onClick={() => removeRow(cat)}
+                aria-label={`Remove ${cat} budget`}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all shrink-0"
                 title="Remove budget"
               >

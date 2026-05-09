@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { randomBytes } from 'crypto';
+import { randomBytes, createHash } from 'crypto';
 import rateLimit from 'express-rate-limit';
 import { Resend } from 'resend';
 import { db } from '../database.js';
@@ -14,6 +14,7 @@ const resend     = IS_PROD && process.env.RESEND_API_KEY ? new Resend(process.en
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'noreply@monetrex.app';
 const APP_URL    = process.env.APP_URL || 'http://localhost:5173';
 /* eslint-enable no-undef */
+const DUMMY_HASH = bcrypt.hashSync('__dummy_timing__', 12);
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -45,6 +46,7 @@ router.post('/signup', authLimiter, async (req, res) => {
   try {
     const { name, email, password } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
+    if (name.trim().length > 100) return res.status(400).json({ error: 'Name must be 100 characters or fewer' });
     if (!email?.trim()) return res.status(400).json({ error: 'Email is required' });
     if (!isValidEmail(email.trim())) return res.status(400).json({ error: 'Enter a valid email address' });
     if (!password) return res.status(400).json({ error: 'Password is required' });
@@ -54,7 +56,7 @@ router.post('/signup', authLimiter, async (req, res) => {
     const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(emailLower);
     if (existing) return res.status(409).json({ error: 'An account with this email already exists' });
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 12);
     const id = genId();
 
     db.prepare('INSERT INTO users (id, name, email, password_hash, avatar) VALUES (?, ?, ?, ?, ?)')
@@ -79,10 +81,8 @@ router.post('/login', authLimiter, async (req, res) => {
     if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
 
     const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase().trim());
-    if (!user) return res.status(401).json({ error: 'No account found with this email' });
-
-    const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) return res.status(401).json({ error: 'Invalid password' });
+    const valid = await bcrypt.compare(password, user ? user.password_hash : DUMMY_HASH);
+    if (!user || !valid) return res.status(401).json({ error: 'Email or password is incorrect' });
 
     const { token } = signToken(user.id);
     res.cookie('token', token, COOKIE_OPTS);
@@ -121,11 +121,12 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
 
     db.prepare('DELETE FROM password_reset_tokens WHERE user_id = ?').run(user.id);
 
-    const resetToken = randomBytes(32).toString('hex');
-    const expiresAt  = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    const resetToken     = randomBytes(32).toString('hex');
+    const resetTokenHash = createHash('sha256').update(resetToken).digest('hex');
+    const expiresAt      = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
     db.prepare('INSERT INTO password_reset_tokens (token, user_id, expires_at) VALUES (?, ?, ?)')
-      .run(resetToken, user.id, expiresAt);
+      .run(resetTokenHash, user.id, expiresAt);
 
     const resetLink = `${APP_URL}/reset-password?token=${resetToken}`;
 
@@ -158,17 +159,18 @@ router.post('/reset-password', authLimiter, async (req, res) => {
     if (!token || !newPassword) return res.status(400).json({ error: 'Token and new password are required' });
     if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
 
-    const row = db.prepare('SELECT * FROM password_reset_tokens WHERE token = ?').get(token);
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const row = db.prepare('SELECT * FROM password_reset_tokens WHERE token = ?').get(tokenHash);
     if (!row) return res.status(400).json({ error: 'Invalid or expired reset token' });
 
     if (new Date(row.expires_at) < new Date()) {
-      db.prepare('DELETE FROM password_reset_tokens WHERE token = ?').run(token);
+      db.prepare('DELETE FROM password_reset_tokens WHERE token = ?').run(tokenHash);
       return res.status(400).json({ error: 'Reset token has expired. Please request a new one.' });
     }
 
-    const hash = await bcrypt.hash(newPassword, 10);
+    const hash = await bcrypt.hash(newPassword, 12);
     db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, row.user_id);
-    db.prepare('DELETE FROM password_reset_tokens WHERE token = ?').run(token);
+    db.prepare('DELETE FROM password_reset_tokens WHERE token = ?').run(tokenHash);
 
     res.json({ ok: true });
   } catch (e) {

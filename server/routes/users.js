@@ -17,7 +17,11 @@ router.get('/', authenticate, (req, res) => {
 router.patch('/', authenticate, async (req, res) => {
   try {
     const updates = {};
-    if (req.body.name            !== undefined) updates.name          = req.body.name.trim();
+    if (req.body.name            !== undefined) {
+      const trimmedName = req.body.name.trim();
+      if (trimmedName.length > 100) return res.status(400).json({ error: 'Name must be 100 characters or fewer' });
+      updates.name = trimmedName;
+    }
     if (req.body.email           !== undefined) {
       const emailVal = req.body.email.toLowerCase().trim();
       if (!isValidEmail(emailVal)) return res.status(400).json({ error: 'Enter a valid email address' });
@@ -49,7 +53,7 @@ router.post('/change-password', authenticate, async (req, res) => {
     const valid = await bcrypt.compare(currentPassword, user.password_hash);
     if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
 
-    const newHash = await bcrypt.hash(newPassword, 10);
+    const newHash = await bcrypt.hash(newPassword, 12);
     db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(newHash, req.userId);
     res.json({ ok: true });
   } catch (e) {

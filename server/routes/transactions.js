@@ -11,6 +11,8 @@ router.post('/groups/:groupId/transactions', authenticate, (req, res) => {
     const { title, amount, category, memberId, note, date, isRecurring } = req.body;
 
     if (!title?.trim()) return res.status(400).json({ error: 'Title is required' });
+    if (title.trim().length > 200) return res.status(400).json({ error: 'Title must be 200 characters or fewer' });
+    if (note && note.length > 500) return res.status(400).json({ error: 'Note must be 500 characters or fewer' });
     if (amount === undefined || amount === null) return res.status(400).json({ error: 'Amount is required' });
     const parsedAmount = parseFloat(amount);
     if (!Number.isFinite(parsedAmount)) return res.status(400).json({ error: 'Amount must be a valid number' });
@@ -56,14 +58,20 @@ router.patch('/transactions/:id', authenticate, (req, res) => {
 
     const updates = {};
     const { title, amount, category, note, date, isRecurring, memberId } = req.body;
-    if (title       !== undefined) updates.title        = title.trim();
+    if (title !== undefined) {
+      if (title.trim().length > 200) return res.status(400).json({ error: 'Title must be 200 characters or fewer' });
+      updates.title = title.trim();
+    }
     if (amount !== undefined) {
       const parsedAmount = parseFloat(amount);
       if (!Number.isFinite(parsedAmount)) return res.status(400).json({ error: 'Amount must be a valid number' });
       updates.amount = parsedAmount;
     }
     if (category    !== undefined) updates.category     = category;
-    if (note        !== undefined) updates.note         = note?.trim() || '';
+    if (note !== undefined) {
+      if (note && note.length > 500) return res.status(400).json({ error: 'Note must be 500 characters or fewer' });
+      updates.note = note?.trim() || '';
+    }
     if (date        !== undefined) updates.date         = date;
     if (isRecurring !== undefined) updates.is_recurring = isRecurring ? 1 : 0;
     if (memberId !== undefined) {

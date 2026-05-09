@@ -112,7 +112,7 @@ export const Analytics = () => {
             { label: 'Transactions', value: transactions.length.toString(), color: 'text-accent-purple' },
           ].map((item, i) => (
             <Card glass key={i} className="text-center py-4">
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-medium">{item.label}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-medium">{item.label}</p>
               <p className={`text-2xl font-bold mt-1.5 ${item.color} animate-count-up`}>{item.value}</p>
             </Card>
           ))}
@@ -133,7 +133,8 @@ export const Analytics = () => {
                 <CardTitle className="text-slate-900 dark:text-white">Income vs Expenses</CardTitle>
                 <CardDescription className="text-slate-500 dark:text-slate-400">Monthly cash flow comparison</CardDescription>
               </CardHeader>
-              <CardContent className="h-64">
+              <CardContent className="h-48 sm:h-64">
+                <div role="img" aria-label="Line chart comparing monthly income and expenses over time" className="h-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={monthlyData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148,163,184,0.1)" />
@@ -144,6 +145,7 @@ export const Analytics = () => {
                     <Line type="monotone" dataKey="expenses" name="Expenses" stroke="#EF4444" strokeWidth={2.5} dot={{ r: 4, fill: '#EF4444', strokeWidth: 0 }} activeDot={{ r: 6 }} />
                   </LineChart>
                 </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
 
@@ -153,7 +155,8 @@ export const Analytics = () => {
                 <CardTitle className="text-slate-900 dark:text-white">Spending Velocity</CardTitle>
                 <CardDescription className="text-slate-500 dark:text-slate-400">Expense rate over time</CardDescription>
               </CardHeader>
-              <CardContent className="h-64">
+              <CardContent className="h-48 sm:h-64">
+                <div role="img" aria-label="Area chart showing spending velocity (expense rate) over time" className="h-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={monthlyData}>
                     <defs>
@@ -172,6 +175,7 @@ export const Analytics = () => {
                     <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#4F46E5" strokeWidth={2.5} fillOpacity={1} fill="url(#spendGrad)" />
                   </AreaChart>
                 </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
 
@@ -181,7 +185,8 @@ export const Analytics = () => {
                 <CardTitle className="text-slate-900 dark:text-white">Monthly Savings</CardTitle>
                 <CardDescription className="text-slate-500 dark:text-slate-400">Income minus expenses per month</CardDescription>
               </CardHeader>
-              <CardContent className="h-64">
+              <CardContent className="h-48 sm:h-64">
+                <div role="img" aria-label="Bar chart showing net monthly savings (income minus expenses) per month" className="h-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={savingsData}>
                     <defs>
@@ -205,6 +210,7 @@ export const Analytics = () => {
                     />
                   </BarChart>
                 </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
 
@@ -214,8 +220,9 @@ export const Analytics = () => {
                 <CardTitle className="text-slate-900 dark:text-white">Spending by Category</CardTitle>
                 <CardDescription className="text-slate-500 dark:text-slate-400">All-time expense breakdown</CardDescription>
               </CardHeader>
-              <CardContent className="h-64">
+              <CardContent className="h-48 sm:h-64">
                 {categoryData.length > 0 ? (
+                  <div role="img" aria-label="Horizontal bar chart showing spending breakdown by category" className="h-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={categoryData} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(148,163,184,0.1)" />
@@ -229,6 +236,7 @@ export const Analytics = () => {
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
+                  </div>
                 ) : (
                   <div className="h-full flex items-center justify-center">
                     <p className="text-slate-400 text-sm">No expense data yet.</p>
