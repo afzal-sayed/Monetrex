@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Target, Settings2, TrendingUp, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Target, Settings2, TrendingUp, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, ChevronDown, CalendarDays } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { useAppContext } from '../context/useAppContext';
 import { CATEGORY_EMOJI, CATEGORY_COLORS } from '../utils/helpers';
@@ -38,6 +38,8 @@ export const Budgets = () => {
 
   const months = useMemo(() => buildMonthList(currentMonth, 12), [currentMonth]);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [pickerOpen,    setPickerOpen]    = useState(false);
+  const pickerRef = useRef(null);
 
   const isCurrentMonth = selectedMonth === currentMonth;
   const currentIdx     = months.indexOf(selectedMonth);
@@ -46,6 +48,15 @@ export const Budgets = () => {
     const next = currentIdx + dir;
     if (next >= 0 && next < months.length) setSelectedMonth(months[next]);
   };
+
+  // Close picker on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target)) setPickerOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   // Budget data for the selected month (falls back to 'default' if none set)
   const monthBudgets = useMemo(() => {
@@ -117,45 +128,88 @@ export const Budgets = () => {
         </Link>
       </header>
 
-      {/* Month selector */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => step(1)}
-          disabled={currentIdx >= months.length - 1}
-          aria-label="Previous month"
-          className="p-2 rounded-xl border border-slate-200/60 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.07] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        >
-          <ChevronLeft size={16} />
-        </button>
+      {/* Month navigator */}
+      <div className="flex items-center gap-3">
+        {/* Pill control */}
+        <div className="relative" ref={pickerRef}>
+          <div className="flex items-center rounded-2xl overflow-hidden border border-slate-200/70 dark:border-white/[0.09] bg-white/80 dark:bg-white/[0.05] backdrop-blur-sm shadow-sm">
+            {/* Prev arrow */}
+            <button
+              onClick={() => step(1)}
+              disabled={currentIdx >= months.length - 1}
+              aria-label="Previous month"
+              className="flex items-center justify-center w-10 h-10 shrink-0 text-slate-400 hover:text-primary hover:bg-primary/8 disabled:opacity-25 disabled:cursor-not-allowed transition-all border-r border-slate-200/60 dark:border-white/[0.08]"
+            >
+              <ChevronLeft size={16} />
+            </button>
 
-        <div className="flex-1">
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl border border-slate-200/60 dark:border-white/10 bg-white dark:bg-slate-900/40 text-sm font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-primary transition-colors text-center appearance-none cursor-pointer"
-          >
-            {months.map((m) => (
-              <option key={m} value={m}>
-                {toLabel(m)}{m === currentMonth ? ' (current)' : ''}
-              </option>
-            ))}
-          </select>
+            {/* Month display — click to open grid picker */}
+            <button
+              onClick={() => setPickerOpen((v) => !v)}
+              className="flex items-center justify-center gap-2 px-3 py-2.5 min-w-[168px]"
+            >
+              <CalendarDays size={14} className="text-primary shrink-0" />
+              <span className="text-sm font-semibold text-slate-800 dark:text-white truncate">
+                {toLabel(selectedMonth)}
+              </span>
+              {!isCurrentMonth && (
+                <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-amber-400/15 text-amber-500 dark:text-amber-400 shrink-0">
+                  Past
+                </span>
+              )}
+              <ChevronDown
+                size={13}
+                className={`text-slate-400 shrink-0 transition-transform duration-200 ${pickerOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+
+            {/* Next arrow */}
+            <button
+              onClick={() => step(-1)}
+              disabled={currentIdx <= 0}
+              aria-label="Next month"
+              className="flex items-center justify-center w-10 h-10 shrink-0 text-slate-400 hover:text-primary hover:bg-primary/8 disabled:opacity-25 disabled:cursor-not-allowed transition-all border-l border-slate-200/60 dark:border-white/[0.08]"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+
+          {/* Grid picker dropdown */}
+          {pickerOpen && (
+            <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-64 glass-panel border border-white/30 dark:border-white/[0.09] rounded-2xl shadow-2xl p-3 animate-fade-up">
+              <div className="grid grid-cols-3 gap-1.5">
+                {[...months].reverse().map((m) => {
+                  const isSelected = m === selectedMonth;
+                  const isCurrent  = m === currentMonth;
+                  return (
+                    <button
+                      key={m}
+                      onClick={() => { setSelectedMonth(m); setPickerOpen(false); }}
+                      className={`px-2 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                        isSelected
+                          ? 'bg-primary text-white shadow-md shadow-primary/30'
+                          : isCurrent
+                          ? 'bg-primary/10 text-primary ring-1 ring-primary/30'
+                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.08]'
+                      }`}
+                    >
+                      {new Date(Number(m.split('-')[0]), Number(m.split('-')[1]) - 1)
+                        .toLocaleString('en-IN', { month: 'short', year: '2-digit' })}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
-        <button
-          onClick={() => step(-1)}
-          disabled={currentIdx <= 0}
-          aria-label="Next month"
-          className="p-2 rounded-xl border border-slate-200/60 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.07] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        >
-          <ChevronRight size={16} />
-        </button>
-
+        {/* Today shortcut */}
         {!isCurrentMonth && (
           <button
-            onClick={() => setSelectedMonth(currentMonth)}
-            className="px-3 py-2 rounded-xl text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/15 transition-colors shrink-0"
+            onClick={() => { setSelectedMonth(currentMonth); setPickerOpen(false); }}
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-2xl text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/15 border border-primary/20 transition-all shrink-0"
           >
+            <CalendarDays size={13} />
             Today
           </button>
         )}
