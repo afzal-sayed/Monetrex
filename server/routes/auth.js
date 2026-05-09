@@ -14,6 +14,7 @@ const resend     = IS_PROD && process.env.RESEND_API_KEY ? new Resend(process.en
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'noreply@monetrex.app';
 const APP_URL    = process.env.APP_URL || 'http://localhost:5173';
 /* eslint-enable no-undef */
+const DUMMY_HASH = '$2b$12$invalidhashfortimingequalizexx.invalidhashfortimingeqxx';
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -79,10 +80,8 @@ router.post('/login', authLimiter, async (req, res) => {
     if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
 
     const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase().trim());
-    if (!user) return res.status(401).json({ error: 'No account found with this email' });
-
-    const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) return res.status(401).json({ error: 'Invalid password' });
+    const valid = await bcrypt.compare(password, user ? user.password_hash : DUMMY_HASH);
+    if (!user || !valid) return res.status(401).json({ error: 'Email or password is incorrect' });
 
     const { token } = signToken(user.id);
     res.cookie('token', token, COOKIE_OPTS);
