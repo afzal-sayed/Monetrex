@@ -1,11 +1,12 @@
 import React from 'react';
 import { cn } from '../../utils/cn';
 
-export const Input = React.forwardRef(({ className, label, icon: Icon, error, ...props }, ref) => {
+export const Input = React.forwardRef(({ className, label, id, icon: Icon, error, ...props }, ref) => {
+  const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : undefined);
   return (
     <div className="relative w-full flex flex-col gap-1.5">
       {label && (
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">
+        <label htmlFor={inputId} className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">
           {label}
         </label>
       )}
@@ -16,6 +17,7 @@ export const Input = React.forwardRef(({ className, label, icon: Icon, error, ..
           </div>
         )}
         <input
+          id={inputId}
           ref={ref}
           className={cn(
             "flex h-11 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/40 px-4 py-2 text-sm text-slate-900 dark:text-white transition-all duration-300",
