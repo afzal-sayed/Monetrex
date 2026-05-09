@@ -4,7 +4,7 @@ import { dirname, join } from 'path';
 import { mkdirSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = join(__dirname, 'data');
+const DATA_DIR = process.env.DATA_DIR || join(__dirname, 'data');
 const DB_PATH = join(DATA_DIR, 'monetrex.db');
 
 try { mkdirSync(DATA_DIR, { recursive: true }); } catch { /* dir already exists */ }
