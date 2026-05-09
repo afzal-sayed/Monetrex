@@ -122,7 +122,7 @@ const BudgetSection = () => {
         <div className="space-y-2.5">
           {rows.map(({ cat, amt }) => (
             <div key={cat} className="flex items-center gap-3">
-              <div className="flex items-center gap-2 w-36 shrink-0">
+              <div className="flex items-center gap-2 w-24 sm:w-36 shrink-0">
                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat] || '#6366F1' }} />
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">{cat}</span>
               </div>
@@ -149,7 +149,7 @@ const BudgetSection = () => {
 
       {/* Add new budget row */}
       {availCats.length > 0 && (
-        <div className="flex items-center gap-3 pt-2 border-t border-slate-200/60 dark:border-white/[0.06]">
+        <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-200/60 dark:border-white/[0.06]">
           <select
             value={addCat}
             onChange={(e) => setAddCat(e.target.value)}
@@ -163,7 +163,7 @@ const BudgetSection = () => {
             placeholder="Amount"
             value={addAmt}
             onChange={(e) => setAddAmt(e.target.value)}
-            className="w-32"
+            className="w-full sm:w-32"
           />
           <Button variant="glass" onClick={handleAdd} className="gap-1.5 shrink-0">
             <Plus size={14} /> Add

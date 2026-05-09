@@ -33,7 +33,7 @@ const apiLimiter = rateLimit({
 /* eslint-disable no-undef */
 const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
   getSecret:            () => process.env.CSRF_SECRET,
-  getSessionIdentifier: (req) => req.cookies?.token ?? req.ip,
+  getSessionIdentifier: () => '',
   cookieName:    IS_PROD ? '__Host-x-csrf-token' : 'x-csrf-token',
   cookieOptions: {
     httpOnly: true,

@@ -176,6 +176,7 @@ export const AppProvider = ({ children }) => {
 
       // Budgets
       budgets: activeBudgets, updateBudgets,
+      budgetsRaw: budgets,
       currentMonth,
 
       // Chart data

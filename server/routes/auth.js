@@ -104,7 +104,8 @@ router.post('/logout', authLimiter, (req, res) => {
       }
     } catch { /* expired token — still clear the cookie */ }
   }
-  res.clearCookie('token', COOKIE_OPTS);
+  const { maxAge: _ignored, ...clearOpts } = COOKIE_OPTS;
+  res.clearCookie('token', clearOpts);
   res.json({ ok: true });
 });
 

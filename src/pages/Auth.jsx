@@ -2,27 +2,71 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
-import { Mail, Lock, Wallet, User as UserIcon, ArrowLeft, Loader2, ShieldCheck, KeyRound } from 'lucide-react';
+import { Mail, Lock, Wallet, User as UserIcon, ArrowLeft, Loader2, ShieldCheck, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/useAppContext';
 import { apiFetch } from '../utils/api';
+
+const PasswordStrength = ({ password }) => {
+  if (!password) return null;
+  const strong = password.length >= 12;
+  const ok     = password.length >= 8;
+  return (
+    <div className="flex gap-1 -mt-1">
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className={`h-1 flex-1 rounded-full transition-colors ${
+            (strong && i <= 3) ? 'bg-emerald-500' :
+            (ok     && i <= 2) ? 'bg-amber-500'   :
+                      i === 1  ? 'bg-red-400'      : 'bg-slate-200 dark:bg-white/10'
+          }`}
+        />
+      ))}
+    </div>
+  );
+};
 
 export const Auth = () => {
   const navigate = useNavigate();
   const { login, signup } = useAppContext();
 
-  const [view,       setView]       = useState('login'); // login | signup | forgot | reset
-  const [email,      setEmail]      = useState('');
-  const [password,   setPassword]   = useState('');
-  const [name,       setName]       = useState('');
-  const [resetToken, setResetToken] = useState('');
-  const [newPass,    setNewPass]    = useState('');
-  const [error,      setError]      = useState('');
-  const [info,       setInfo]       = useState('');
-  const [loading,    setLoading]    = useState(false);
+  const [view,            setView]            = useState('login'); // login | signup | forgot | reset
+  const [email,           setEmail]           = useState('');
+  const [password,        setPassword]        = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name,            setName]            = useState('');
+  const [resetToken,      setResetToken]      = useState('');
+  const [newPass,         setNewPass]         = useState('');
+  const [error,           setError]           = useState('');
+  const [info,            setInfo]            = useState('');
+  const [loading,         setLoading]         = useState(false);
+  const [showPassword,    setShowPassword]    = useState(false);
+  const [showConfirm,     setShowConfirm]     = useState(false);
+  const [showNewPass,     setShowNewPass]     = useState(false);
 
-  const resetForm = () => { setError(''); setInfo(''); setPassword(''); setNewPass(''); };
+  const resetForm = () => {
+    setError('');
+    setInfo('');
+    setPassword('');
+    setNewPass('');
+    setConfirmPassword('');
+    setShowPassword(false);
+    setShowConfirm(false);
+    setShowNewPass(false);
+  };
   const switchView = (v) => { resetForm(); setView(v); };
+
+  const eyeBtn = (show, setShow, label) => (
+    <button
+      type="button"
+      onClick={() => setShow((v) => !v)}
+      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+      aria-label={show ? `Hide ${label}` : `Show ${label}`}
+    >
+      {show ? <EyeOff size={16} /> : <Eye size={16} />}
+    </button>
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -77,6 +121,10 @@ export const Auth = () => {
     if (!email.trim())    { setError('Email is required');    return; }
     if (!password)        { setError('Password is required'); return; }
     if (password.length < 8) { setError('Password must be at least 8 characters'); return; }
+    if (view === 'signup' && password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
 
     setLoading(true);
     const result = view === 'login'
@@ -89,10 +137,10 @@ export const Auth = () => {
   };
 
   const headings = {
-    login:  { title: 'Welcome back',       sub: 'Sign in to your Monetrex dashboard.' },
-    signup: { title: 'Create account',     sub: 'Join Monetrex and take control of your money.' },
-    forgot: { title: 'Reset password',     sub: 'Enter your email to receive a reset link.' },
-    reset:  { title: 'Set new password',   sub: 'Enter and confirm your new password.' },
+    login:  { title: 'Welcome back',     sub: 'Sign in to your Monetrex dashboard.' },
+    signup: { title: 'Create account',   sub: 'Join Monetrex and take control of your money.' },
+    forgot: { title: 'Reset password',   sub: 'Enter your email to receive a reset link.' },
+    reset:  { title: 'Set new password', sub: 'Enter and confirm your new password.' },
   };
 
   const btnLabel = { login: 'Sign in', signup: 'Create account', forgot: 'Send reset link', reset: 'Update password' };
@@ -167,10 +215,26 @@ export const Auth = () => {
                 )}
 
                 {(view === 'login' || view === 'signup') && (
+                  <>
+                    <Input
+                      label="Password" icon={Lock}
+                      type={showPassword ? 'text' : 'password'}
+                      value={password} onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••" minLength={8}
+                      rightElement={eyeBtn(showPassword, setShowPassword, 'password')}
+                    />
+                    {view === 'signup' && <PasswordStrength password={password} />}
+                  </>
+                )}
+
+                {view === 'signup' && (
                   <Input
-                    label="Password" icon={Lock} type="password"
-                    value={password} onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••" minLength={8}
+                    label="Confirm Password" icon={Lock}
+                    type={showConfirm ? 'text' : 'password'}
+                    value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    rightElement={eyeBtn(showConfirm, setShowConfirm, 'confirm password')}
+                    error={confirmPassword && password !== confirmPassword ? 'Passwords do not match' : ''}
                   />
                 )}
 
@@ -182,10 +246,12 @@ export const Auth = () => {
                       placeholder="Paste your reset token"
                     />
                     <Input
-                      label="New Password" icon={Lock} type="password"
+                      label="New Password" icon={Lock}
+                      type={showNewPass ? 'text' : 'password'}
                       value={newPass} onChange={(e) => setNewPass(e.target.value)}
                       placeholder="••••••••" minLength={8}
                       autoFocus
+                      rightElement={eyeBtn(showNewPass, setShowNewPass, 'new password')}
                     />
                   </>
                 )}

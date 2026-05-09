@@ -9,6 +9,7 @@ import { Auth } from './pages/Auth';
 import { Analytics } from './pages/Analytics';
 import { Family } from './pages/Family';
 import { Settings } from './pages/Settings';
+import { Budgets } from './pages/Budgets';
 import { ResetPassword } from './pages/ResetPassword';
 import { Toast } from './components/ui/Toast';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
@@ -83,6 +84,7 @@ function AppInner() {
             <Route path="/dashboard"    element={<Dashboard />}    />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/analytics"    element={<Analytics />}    />
+            <Route path="/budgets"      element={<Budgets />}      />
             <Route path="/family"       element={<Family />}       />
             <Route path="/settings"     element={<Settings />}     />
           </Route>
