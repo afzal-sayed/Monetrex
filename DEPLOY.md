@@ -92,13 +92,14 @@ graphify-out/
 ### 3.3 Railway setup (backend)
 
 1. Create a Railway project → **Deploy from GitHub repo**.
-2. Set **Start Command**: `node server/index.js`
+2. `railway.toml` (committed to repo) sets the start command automatically — no manual dashboard config needed.
 3. Set **Environment Variables** on Railway:
    ```
-   JWT_SECRET   = <generate with: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))">
+   JWT_SECRET      = <generate with: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))">
+   CSRF_SECRET     = <generate a second random secret the same way>
    ALLOWED_ORIGINS = https://your-app.vercel.app
-   NODE_ENV     = production
-   PORT         = 3001   # Railway sets $PORT automatically; this is a fallback
+   NODE_ENV        = production
+   PORT            = 3001   # Railway sets $PORT automatically; this is a fallback
    ```
 4. **Persistent volume** — critical for SQLite:
    - In Railway project → Storage → Add Volume → mount at `/app/server/data`
@@ -295,9 +296,9 @@ More than enough for a personal/small-team expense app.
 
 ### Option A specific
 - [x] Code changes done (CORS, vercel.json, .vercelignore)
+- [x] `railway.toml` committed — sets start command and health check automatically
 - [ ] Railway project created, linked to repo
-- [ ] `node server/index.js` set as start command on Railway
-- [ ] `JWT_SECRET` and `ALLOWED_ORIGINS` set on Railway
+- [ ] `JWT_SECRET`, `CSRF_SECRET`, and `ALLOWED_ORIGINS` set on Railway
 - [ ] Railway volume mounted at `/app/server/data` (Hobby plan required)
 
 ### Option B specific
