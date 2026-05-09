@@ -416,7 +416,7 @@ export const Transactions = () => {
               paginated.map((txn) => {
                 const member = family.find((f) => f.id === txn.member_id);
                 return (
-                  <div key={txn.id} className="flex items-center gap-3 px-4 py-3.5">
+                  <div key={txn.id} className="flex items-center gap-3 px-4 py-3.5 w-full min-w-0">
                     {/* Icon */}
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center text-base shrink-0"
@@ -452,9 +452,9 @@ export const Transactions = () => {
                     </div>
 
                     {/* Amount + actions */}
-                    <div className="flex flex-col items-end gap-2 shrink-0">
-                      <span className={`text-sm font-bold tabular-nums ${txn.amount > 0 ? 'text-secondary' : 'text-slate-900 dark:text-white'}`}>
-                        {txn.amount > 0 ? '+' : '−'}₹{Math.abs(txn.amount).toFixed(2)}
+                    <div className="flex flex-col items-end gap-2 shrink-0 max-w-[108px] overflow-hidden">
+                      <span className={`text-sm font-bold tabular-nums text-right leading-tight ${txn.amount > 0 ? 'text-secondary' : 'text-slate-900 dark:text-white'}`}>
+                        {txn.amount > 0 ? '+' : '−'}₹{Math.abs(txn.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </span>
                       <div className="flex gap-1">
                         <button
