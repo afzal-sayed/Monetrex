@@ -46,6 +46,7 @@ router.post('/signup', authLimiter, async (req, res) => {
   try {
     const { name, email, password } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
+    if (name.trim().length > 100) return res.status(400).json({ error: 'Name must be 100 characters or fewer' });
     if (!email?.trim()) return res.status(400).json({ error: 'Email is required' });
     if (!isValidEmail(email.trim())) return res.status(400).json({ error: 'Enter a valid email address' });
     if (!password) return res.status(400).json({ error: 'Password is required' });
@@ -55,7 +56,7 @@ router.post('/signup', authLimiter, async (req, res) => {
     const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(emailLower);
     if (existing) return res.status(409).json({ error: 'An account with this email already exists' });
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 12);
     const id = genId();
 
     db.prepare('INSERT INTO users (id, name, email, password_hash, avatar) VALUES (?, ?, ?, ?, ?)')

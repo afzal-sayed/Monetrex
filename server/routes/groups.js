@@ -11,6 +11,7 @@ router.post('/', authenticate, (req, res) => {
   try {
     const { name } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'Group name is required' });
+    if (name.trim().length > 100) return res.status(400).json({ error: 'Group name must be 100 characters or fewer' });
 
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
@@ -38,6 +39,7 @@ router.patch('/:groupId', authenticate, (req, res) => {
     const { groupId } = req.params;
     const { name } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'Group name is required' });
+    if (name.trim().length > 100) return res.status(400).json({ error: 'Group name must be 100 characters or fewer' });
 
     const membership = db.prepare(
       'SELECT role FROM memberships WHERE group_id = ? AND user_id = ?'
