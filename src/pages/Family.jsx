@@ -183,7 +183,7 @@ export const Family = () => {
       {groups.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-2 bg-white/50 dark:bg-white/[0.04] p-1.5 rounded-2xl border border-slate-200/60 dark:border-white/[0.07] backdrop-blur-xl">
-            <span className="text-[10px] font-bold text-slate-400 px-2 uppercase tracking-wider">Group:</span>
+            <span className="text-xs font-bold text-slate-400 px-2 uppercase tracking-wider">Group:</span>
             <div className="flex gap-1 flex-wrap">
               {groups.map((g) => (
                 <button
@@ -240,7 +240,10 @@ export const Family = () => {
               key={member.id}
               glass interactive
               className="cursor-pointer neon-hover"
+              role="button"
+              tabIndex={0}
               onClick={() => setSelectedMember(member)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedMember(member); } }}
             >
               <CardContent className="p-5">
                 {/* Header */}
@@ -258,10 +261,10 @@ export const Family = () => {
                     <div>
                       <p className="font-bold text-slate-900 dark:text-white">{displayName(member)}</p>
                       {member.user_id === null
-                        ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-500 dark:text-amber-400">
+                        ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-amber-500/10 text-amber-500 dark:text-amber-400">
                             <Clock size={9} /> Pending
                           </span>
-                        : <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${roleBadge(member.role)}`}>
+                        : <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider ${roleBadge(member.role)}`}>
                             {roleIcon(member.role)} {member.role}
                           </span>
                       }
@@ -273,11 +276,11 @@ export const Family = () => {
                 {/* Stats */}
                 <div className="grid grid-cols-2 gap-2.5 mb-4">
                   <div className="rounded-xl bg-slate-50 dark:bg-white/[0.04] p-2.5 border border-slate-100 dark:border-white/[0.05]">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Spent</p>
+                    <p className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Spent</p>
                     <p className="text-base font-bold text-slate-900 dark:text-white mt-0.5">₹{stats.spent.toLocaleString()}</p>
                   </div>
                   <div className="rounded-xl bg-slate-50 dark:bg-white/[0.04] p-2.5 border border-slate-100 dark:border-white/[0.05]">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Income</p>
+                    <p className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Income</p>
                     <p className="text-base font-bold text-secondary mt-0.5">₹{stats.income.toLocaleString()}</p>
                   </div>
                 </div>
@@ -285,7 +288,7 @@ export const Family = () => {
                 {/* Budget progress */}
                 {member.spend_limit && (
                   <div className="mb-3">
-                    <div className="flex justify-between text-[10px] mb-1.5">
+                    <div className="flex justify-between text-xs mb-1.5">
                       <span className="text-slate-400">₹{stats.spent.toFixed(0)} / ₹{member.spend_limit}</span>
                       <span className={`font-bold ${progress > 80 ? 'text-red-400' : 'text-secondary'}`}>{progress.toFixed(0)}%</span>
                     </div>
@@ -304,13 +307,13 @@ export const Family = () => {
                     {stats.categories.slice(0, 3).map(([cat]) => (
                       <span
                         key={cat}
-                        className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-medium"
+                        className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium"
                         style={{ backgroundColor: `${CATEGORY_COLORS[cat] || '#6366F1'}18`, color: CATEGORY_COLORS[cat] || '#6366F1' }}
                       >
                         {cat}
                       </span>
                     ))}
-                    <span className="text-[10px] text-slate-400 px-1">{stats.txnCount} txns</span>
+                    <span className="text-xs text-slate-400 px-1">{stats.txnCount} txns</span>
                   </div>
                 )}
               </CardContent>
@@ -336,7 +339,7 @@ export const Family = () => {
                   { label: 'Balance', value: `₹${Math.abs(stats.balance).toLocaleString()}`, cls: stats.balance >= 0 ? 'text-secondary' : 'text-red-400' },
                 ].map((s) => (
                   <div key={s.label} className="text-center p-3 rounded-xl bg-slate-50 dark:bg-white/[0.05] border border-slate-100 dark:border-white/[0.07]">
-                    <p className="text-[10px] text-slate-400 uppercase tracking-wider">{s.label}</p>
+                    <p className="text-xs text-slate-400 uppercase tracking-wider">{s.label}</p>
                     <p className={`text-lg font-bold mt-0.5 ${s.cls}`}>{s.value}</p>
                   </div>
                 ))}
