@@ -197,7 +197,7 @@ export const Transactions = () => {
             {/* Mobile: collapsible filter toggle */}
             <button
               onClick={() => setShowFilters((v) => !v)}
-              className={`md:hidden relative flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors ${
+              className={`lg:hidden relative flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors ${
                 showFilters || activeFilterCount > 0
                   ? 'bg-primary/10 border-primary/30 text-primary'
                   : 'bg-slate-50 dark:bg-white/[0.05] border-slate-200/50 dark:border-white/10 text-slate-600 dark:text-slate-300'
@@ -213,7 +213,7 @@ export const Transactions = () => {
           </div>
 
           {/* Desktop: always-visible filters / Mobile: collapsible */}
-          <div className={`space-y-3 ${showFilters ? 'block' : 'hidden md:block'}`}>
+          <div className={`space-y-3 ${showFilters ? 'block' : 'hidden lg:block'}`}>
             {/* Top row: member filter + date range */}
             <div className="flex flex-wrap gap-2 items-center">
               {isAdmin && family.length > 0 && (
@@ -297,7 +297,7 @@ export const Transactions = () => {
 
         <CardContent className="p-0">
           {/* ── Desktop Table (md+) ── */}
-          <div className="hidden md:block overflow-x-auto">
+          <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-left min-w-[640px]">
               <thead>
                 <tr className="border-b border-slate-200/60 dark:border-white/[0.06] text-[11px] text-slate-400 uppercase tracking-wider">
@@ -402,7 +402,7 @@ export const Transactions = () => {
           </div>
 
           {/* ── Mobile Card List (< md) ── */}
-          <div className="md:hidden divide-y divide-slate-100/60 dark:divide-white/[0.04]">
+          <div className="lg:hidden divide-y divide-slate-100/60 dark:divide-white/[0.04]">
             {paginated.length === 0 ? (
               <p className="p-10 text-center text-slate-400 text-sm">
                 {searchTerm || categoryFilter !== 'All' || memberFilter !== 'All'
