@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { randomBytes } from 'crypto';
+import { randomBytes, createHash } from 'crypto';
 import rateLimit from 'express-rate-limit';
 import { Resend } from 'resend';
 import { db } from '../database.js';
@@ -120,11 +120,12 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
 
     db.prepare('DELETE FROM password_reset_tokens WHERE user_id = ?').run(user.id);
 
-    const resetToken = randomBytes(32).toString('hex');
-    const expiresAt  = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    const resetToken     = randomBytes(32).toString('hex');
+    const resetTokenHash = createHash('sha256').update(resetToken).digest('hex');
+    const expiresAt      = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
     db.prepare('INSERT INTO password_reset_tokens (token, user_id, expires_at) VALUES (?, ?, ?)')
-      .run(resetToken, user.id, expiresAt);
+      .run(resetTokenHash, user.id, expiresAt);
 
     const resetLink = `${APP_URL}/reset-password?token=${resetToken}`;
 
@@ -157,17 +158,18 @@ router.post('/reset-password', authLimiter, async (req, res) => {
     if (!token || !newPassword) return res.status(400).json({ error: 'Token and new password are required' });
     if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
 
-    const row = db.prepare('SELECT * FROM password_reset_tokens WHERE token = ?').get(token);
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const row = db.prepare('SELECT * FROM password_reset_tokens WHERE token = ?').get(tokenHash);
     if (!row) return res.status(400).json({ error: 'Invalid or expired reset token' });
 
     if (new Date(row.expires_at) < new Date()) {
-      db.prepare('DELETE FROM password_reset_tokens WHERE token = ?').run(token);
+      db.prepare('DELETE FROM password_reset_tokens WHERE token = ?').run(tokenHash);
       return res.status(400).json({ error: 'Reset token has expired. Please request a new one.' });
     }
 
-    const hash = await bcrypt.hash(newPassword, 10);
+    const hash = await bcrypt.hash(newPassword, 12);
     db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, row.user_id);
-    db.prepare('DELETE FROM password_reset_tokens WHERE token = ?').run(token);
+    db.prepare('DELETE FROM password_reset_tokens WHERE token = ?').run(tokenHash);
 
     res.json({ ok: true });
   } catch (e) {
