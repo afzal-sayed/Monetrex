@@ -433,7 +433,7 @@ export const Transactions = () => {
                       </div>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         <span
-                          className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
+                          className="text-xs font-semibold px-1.5 py-0.5 rounded-md"
                           style={{
                             backgroundColor: `${CATEGORY_COLORS[txn.category] || '#6366F1'}18`,
                             color: CATEGORY_COLORS[txn.category] || '#6366F1',

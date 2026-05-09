@@ -34,7 +34,7 @@ export const Sidebar = () => {
           </div>
           <div>
             <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Monetrex</span>
-            <p className="text-[10px] text-slate-400 font-medium -mt-0.5">Smart Finance</p>
+            <p className="text-xs text-slate-400 font-medium -mt-0.5">Smart Finance</p>
           </div>
         </div>
 
@@ -49,7 +49,7 @@ export const Sidebar = () => {
           <span className="tabular-nums">
             {isPositive ? '+' : ''}₹{Math.abs(netBalance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </span>
-          <span className="text-[10px] font-normal ml-auto text-slate-400">Net</span>
+          <span className="text-xs font-normal ml-auto text-slate-400">Net</span>
         </div>
 
         {/* Nav */}
