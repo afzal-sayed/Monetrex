@@ -300,7 +300,7 @@ export const Transactions = () => {
           <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-left min-w-[640px]">
               <thead>
-                <tr className="border-b border-slate-200/60 dark:border-white/[0.06] text-[11px] text-slate-400 uppercase tracking-wider">
+                <tr className="border-b border-slate-200/60 dark:border-white/[0.06] text-xs text-slate-400 uppercase tracking-wider">
                   {[
                     { key: 'title',    label: 'Transaction' },
                     { key: 'category', label: 'Category'    },
@@ -310,6 +310,7 @@ export const Transactions = () => {
                   ].map(({ key, label, noSort, right }) => (
                     <th
                       key={key}
+                      aria-sort={noSort ? undefined : sortBy === key ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
                       className={`p-4 font-semibold ${noSort ? '' : 'cursor-pointer hover:text-slate-600 dark:hover:text-slate-200 transition-colors'} ${right ? 'text-right' : ''}`}
                       onClick={() => !noSort && handleSort(key)}
                     >
