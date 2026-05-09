@@ -4,8 +4,8 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { doubleCsrf } from 'csrf-csrf';
-import { join } from 'path';
 import { existsSync } from 'fs';
+import { DB_PATH } from './database.js';
 import authRoutes        from './routes/auth.js';
 import userRoutes        from './routes/users.js';
 import dataRoutes        from './routes/data.js';
@@ -63,9 +63,8 @@ app.get('/api/health', (_, res) => res.json({ status: 'ok', ts: new Date().toISO
 app.get('/admin/download-db', (req, res) => {
   const adminSecret = process.env.ADMIN_SECRET;
   if (!adminSecret || req.query.secret !== adminSecret) return res.status(403).send('Forbidden');
-  const dbPath = join(process.env.DATA_DIR || join(import.meta.dirname, 'data'), 'monetrex.db');
-  if (!existsSync(dbPath)) return res.status(404).send('Database file not found');
-  res.download(dbPath, 'monetrex.db');
+  if (!existsSync(DB_PATH)) return res.status(404).send('Database file not found');
+  res.download(DB_PATH, 'monetrex.db');
 });
 /* eslint-enable no-undef */
 
