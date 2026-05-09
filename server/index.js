@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { doubleCsrf } from 'csrf-csrf';
+import { join } from 'path';
+import { existsSync } from 'fs';
 import authRoutes        from './routes/auth.js';
 import userRoutes        from './routes/users.js';
 import dataRoutes        from './routes/data.js';
@@ -56,6 +58,16 @@ app.use('/api', apiLimiter);
 
 app.get('/api/csrf-token', (req, res) => res.json({ token: generateCsrfToken(req, res) }));
 app.get('/api/health', (_, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
+
+/* eslint-disable no-undef */
+app.get('/admin/download-db', (req, res) => {
+  const adminSecret = process.env.ADMIN_SECRET;
+  if (!adminSecret || req.query.secret !== adminSecret) return res.status(403).send('Forbidden');
+  const dbPath = join(process.env.DATA_DIR || join(import.meta.dirname, 'data'), 'monetrex.db');
+  if (!existsSync(dbPath)) return res.status(404).send('Database file not found');
+  res.download(dbPath, 'monetrex.db');
+});
+/* eslint-enable no-undef */
 
 app.use('/api', doubleCsrfProtection);
 
