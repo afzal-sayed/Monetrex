@@ -34,6 +34,14 @@ const apiLimiter = rateLimit({
   message: { error: 'Too many requests. Please try again later.' },
 });
 
+const adminDownloadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many admin download requests. Please try again later.' },
+});
+
 /* eslint-disable no-undef */
 const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
   getSecret:            () => process.env.CSRF_SECRET,
@@ -62,7 +70,7 @@ app.get('/api/csrf-token', (req, res) => res.json({ token: generateCsrfToken(req
 app.get('/api/health', (_, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
 
 /* eslint-disable no-undef */
-app.get('/admin/download-db', (req, res) => {
+app.get('/admin/download-db', adminDownloadLimiter, (req, res) => {
   const adminSecret = process.env.ADMIN_SECRET;
   if (!adminSecret || req.query.secret !== adminSecret) return res.status(403).send('Forbidden');
   const dataDir = dirname(DB_PATH);
