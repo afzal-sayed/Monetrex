@@ -66,11 +66,26 @@ app.use(cookieParser());
 app.use(express.json());
 app.use('/api', apiLimiter);
 
+const csrfBypassForSafeEndpoints = (req, res, next) => {
+  if (
+    req.method === 'GET' &&
+    (req.path === '/csrf-token' || req.path === '/health')
+  ) {
+    return next();
+  }
+  return doubleCsrfProtection(req, res, next);
+};
+
+app.use('/api', csrfBypassForSafeEndpoints);
+
 app.get('/api/csrf-token', (req, res) => res.json({ token: generateCsrfToken(req, res) }));
 app.get('/api/health', (_, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
 
 /* eslint-disable no-undef */
-app.get('/admin/download-db', adminDownloadLimiter, (req, res) => {
+app.get('/admin/download-db', adminDownloadLimiter, (req, res, next) => {
+  if (req.method === 'GET') return next();
+  return doubleCsrfProtection(req, res, next);
+}, (req, res) => {
   const adminSecret = process.env.ADMIN_SECRET;
   if (!adminSecret || req.body?.secret !== adminSecret) return res.status(403).send('Forbidden');
   const dataDir = dirname(DB_PATH);
@@ -84,7 +99,6 @@ app.get('/admin/download-db', adminDownloadLimiter, (req, res) => {
 });
 /* eslint-enable no-undef */
 
-app.use('/api', doubleCsrfProtection);
 
 app.use('/api/auth',         authRoutes);
 app.use('/api/me',           userRoutes);
