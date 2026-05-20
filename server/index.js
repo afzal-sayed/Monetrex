@@ -62,9 +62,9 @@ app.get('/api/csrf-token', (req, res) => res.json({ token: generateCsrfToken(req
 app.get('/api/health', (_, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
 
 /* eslint-disable no-undef */
-app.get('/admin/download-db', (req, res) => {
+app.post('/admin/download-db', (req, res) => {
   const adminSecret = process.env.ADMIN_SECRET;
-  if (!adminSecret || req.query.secret !== adminSecret) return res.status(403).send('Forbidden');
+  if (!adminSecret || req.body?.secret !== adminSecret) return res.status(403).send('Forbidden');
   const dataDir = dirname(DB_PATH);
   if (!existsSync(dataDir)) return res.status(404).send('Data directory not found');
   res.setHeader('Content-Type', 'application/gzip');
