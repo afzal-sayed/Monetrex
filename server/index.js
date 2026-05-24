@@ -60,6 +60,7 @@ const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
 
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(cookieParser());
