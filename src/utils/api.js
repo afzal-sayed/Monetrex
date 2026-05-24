@@ -1,9 +1,8 @@
 export const API       = import.meta.env.VITE_API_URL || '/api';
 export const GROUP_KEY = 'monetrex_active_group';
 
-// Token is stored in an HttpOnly cookie — not accessible from JS.
 export const TOKEN_KEY = 'monetrex_token';
-export const getToken  = () => null; // deprecated — auth via cookie
+export const getToken  = () => localStorage.getItem(TOKEN_KEY);
 
 // ── CSRF token (Double Submit Cookie pattern) ────────────────────────────────
 let _csrfToken = null;
@@ -22,11 +21,13 @@ export const apiFetch = async (path, options = {}) => {
   // Lazy-fetch the token on first mutating request
   if (needsCsrf && !_csrfToken) await fetchCsrfToken();
 
+  const token = getToken();
   const res = await fetch(`${API}${path}`, {
     ...options,
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(needsCsrf ? { 'x-csrf-token': _csrfToken } : {}),
       ...options.headers,
     },

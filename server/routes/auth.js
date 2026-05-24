@@ -68,7 +68,7 @@ router.post('/signup', authLimiter, async (req, res) => {
 
     const { token } = signToken(id);
     res.cookie('token', token, COOKIE_OPTS);
-    res.status(201).json({ user: safeUser(user) });
+    res.status(201).json({ user: safeUser(user), token });
   } catch (e) {
     console.error('Signup error:', e);
     res.status(500).json({ error: 'Server error during signup' });
@@ -86,7 +86,7 @@ router.post('/login', authLimiter, async (req, res) => {
 
     const { token } = signToken(user.id);
     res.cookie('token', token, COOKIE_OPTS);
-    res.json({ user: safeUser(user) });
+    res.json({ user: safeUser(user), token });
   } catch (e) {
     console.error('Login error:', e);
     res.status(500).json({ error: 'Server error during login' });
