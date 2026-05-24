@@ -46,7 +46,7 @@ const adminDownloadLimiter = rateLimit({
 const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
   getSecret:            () => process.env.CSRF_SECRET,
   getSessionIdentifier: () => '',
-  cookieName:    IS_PROD ? '__Host-x-csrf-token' : 'x-csrf-token',
+  cookieName:    'x-csrf-token',
   cookieOptions: {
     httpOnly: true,
     sameSite: IS_PROD ? 'none' : 'lax',

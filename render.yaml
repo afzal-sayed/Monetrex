@@ -23,3 +23,5 @@ services:
         sync: false
       - key: ADMIN_SECRET
         sync: false
+      - key: DATA_DIR
+        value: /tmp/data

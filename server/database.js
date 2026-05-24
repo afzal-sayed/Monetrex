@@ -7,7 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = process.env.DATA_DIR || join(__dirname, 'data');
 export const DB_PATH = join(DATA_DIR, 'monetrex.db');
 
-try { mkdirSync(DATA_DIR, { recursive: true }); } catch { /* dir already exists */ }
+mkdirSync(DATA_DIR, { recursive: true });
 
 export const db = new Database(DB_PATH);
 
