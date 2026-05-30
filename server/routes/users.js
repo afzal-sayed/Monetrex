@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import { db } from '../database.js';
+import { query, run } from '../database.js';
 import { safeUser } from '../helpers.js';
 import { authenticate } from '../middleware/authenticate.js';
 
@@ -8,8 +8,8 @@ const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 
 const router = Router();
 
-router.get('/', authenticate, (req, res) => {
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.userId);
+router.get('/', authenticate, async (req, res) => {
+  const [user] = await query('SELECT * FROM users WHERE id = $1', [req.userId]);
   if (!user) return res.status(404).json({ error: 'User not found' });
   res.json({ user: safeUser(user) });
 });
@@ -32,10 +32,14 @@ router.patch('/', authenticate, async (req, res) => {
 
     if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'No valid fields provided' });
 
-    const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
-    db.prepare(`UPDATE users SET ${setClause} WHERE id = ?`).run(...Object.values(updates), req.userId);
+    const keys      = Object.keys(updates);
+    const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
+    await run(
+      `UPDATE users SET ${setClause} WHERE id = $${keys.length + 1}`,
+      [...Object.values(updates), req.userId]
+    );
 
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.userId);
+    const [user] = await query('SELECT * FROM users WHERE id = $1', [req.userId]);
     res.json({ user: safeUser(user) });
   } catch (e) {
     console.error('Update user error:', e);
@@ -49,12 +53,12 @@ router.post('/change-password', authenticate, async (req, res) => {
     if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Both passwords are required' });
     if (newPassword.length < 8) return res.status(400).json({ error: 'New password must be at least 8 characters' });
 
-    const user = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.userId);
+    const [user] = await query('SELECT password_hash FROM users WHERE id = $1', [req.userId]);
     const valid = await bcrypt.compare(currentPassword, user.password_hash);
     if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
 
     const newHash = await bcrypt.hash(newPassword, 12);
-    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(newHash, req.userId);
+    await run('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, req.userId]);
     res.json({ ok: true });
   } catch (e) {
     console.error('Change password error:', e);
@@ -62,9 +66,9 @@ router.post('/change-password', authenticate, async (req, res) => {
   }
 });
 
-router.delete('/', authenticate, (req, res) => {
+router.delete('/', authenticate, async (req, res) => {
   try {
-    db.prepare('DELETE FROM users WHERE id = ?').run(req.userId);
+    await run('DELETE FROM users WHERE id = $1', [req.userId]);
     res.json({ ok: true });
   } catch (e) {
     console.error('Delete account error:', e);

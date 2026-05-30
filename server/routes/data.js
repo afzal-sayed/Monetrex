@@ -1,53 +1,60 @@
 import { Router } from 'express';
-import { db } from '../database.js';
+import { query } from '../database.js';
 import { createDefaultGroup } from '../helpers.js';
 import { authenticate } from '../middleware/authenticate.js';
 
 const router = Router();
 
-// Combined fetch — returns everything the frontend needs in one round trip
-router.get('/', authenticate, (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
-    const userMemberships = db.prepare(
-      'SELECT group_id FROM memberships WHERE user_id = ?'
-    ).all(req.userId);
+    const membershipRows = await query(
+      'SELECT group_id FROM memberships WHERE user_id = $1',
+      [req.userId]
+    );
 
-    let groupIds = userMemberships.map(m => m.group_id);
+    let groupIds = membershipRows.map(m => m.group_id);
 
-    // Fallback for users who existed before the groups feature
     if (groupIds.length === 0) {
-      const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.userId);
-      const groupId = createDefaultGroup(req.userId, user.name, user.email);
+      const [user] = await query('SELECT * FROM users WHERE id = $1', [req.userId]);
+      const groupId = await createDefaultGroup(req.userId, user.name, user.email);
       groupIds = [groupId];
     }
 
-    const ph = groupIds.map(() => '?').join(',');
+    const groups = await query(
+      'SELECT * FROM groups_tbl WHERE id = ANY($1)',
+      [groupIds]
+    );
 
-    const groups = db.prepare(
-      `SELECT * FROM groups_tbl WHERE id IN (${ph})`
-    ).all(...groupIds);
-
-    const memberships = db.prepare(`
+    const memberships = await query(`
       SELECT m.*, u.name AS user_name, u.avatar AS user_avatar
       FROM memberships m
       LEFT JOIN users u ON u.id = m.user_id
-      WHERE m.group_id IN (${ph})
-    `).all(...groupIds);
+      WHERE m.group_id = ANY($1)
+    `, [groupIds]);
 
-    const months = parseInt(req.query.months, 10);
-    const useAll = !months || months <= 0 || months >= 999;
+    const months  = parseInt(req.query.months, 10);
+    const useAll  = !months || months <= 0 || months >= 999;
 
-    const transactions = useAll
-      ? db.prepare(
-          `SELECT * FROM transactions WHERE group_id IN (${ph}) ORDER BY date DESC, created_at DESC`
-        ).all(...groupIds)
-      : db.prepare(
-          `SELECT * FROM transactions WHERE group_id IN (${ph}) AND date >= date('now', '-' || ? || ' months') ORDER BY date DESC, created_at DESC`
-        ).all(...groupIds, months);
+    let transactions;
+    if (useAll) {
+      transactions = await query(
+        'SELECT * FROM transactions WHERE group_id = ANY($1) ORDER BY date DESC, created_at DESC',
+        [groupIds]
+      );
+    } else {
+      const cutoff = new Date();
+      cutoff.setMonth(cutoff.getMonth() - months);
+      const cutoffStr = cutoff.toISOString().split('T')[0];
+      transactions = await query(
+        'SELECT * FROM transactions WHERE group_id = ANY($1) AND date >= $2 ORDER BY date DESC, created_at DESC',
+        [groupIds, cutoffStr]
+      );
+    }
 
-    const budgets = db.prepare(
-      `SELECT * FROM budgets WHERE group_id IN (${ph})`
-    ).all(...groupIds);
+    const budgets = await query(
+      'SELECT * FROM budgets WHERE group_id = ANY($1)',
+      [groupIds]
+    );
 
     res.json({ groups, memberships, transactions, budgets });
   } catch (e) {

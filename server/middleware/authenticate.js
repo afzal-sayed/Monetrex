@@ -1,12 +1,11 @@
 import jwt from 'jsonwebtoken';
-import { db } from '../database.js';
+import { query, run } from '../database.js';
 
 /* eslint-disable no-undef */
 const JWT_SECRET = process.env.JWT_SECRET;
 /* eslint-enable no-undef */
 
-export const authenticate = (req, res, next) => {
-  // Prefer HttpOnly cookie; fall back to Bearer header for API clients
+export const authenticate = async (req, res, next) => {
   const token =
     req.cookies?.token ||
     (req.headers.authorization?.startsWith('Bearer ')
@@ -20,10 +19,10 @@ export const authenticate = (req, res, next) => {
   try {
     const payload = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
 
-    // JTI blocklist check — prune expired revocations inline (cheap, synchronous)
     if (payload.jti) {
-      db.prepare("DELETE FROM revoked_tokens WHERE revoked_at < datetime('now', '-7 days')").run();
-      const revoked = db.prepare('SELECT 1 FROM revoked_tokens WHERE jti = ?').get(payload.jti);
+      const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      await run('DELETE FROM revoked_tokens WHERE revoked_at < $1', [cutoff]);
+      const [revoked] = await query('SELECT 1 FROM revoked_tokens WHERE jti = $1', [payload.jti]);
       if (revoked) {
         return res.status(401).json({ error: 'Session has been revoked. Please log in again.' });
       }

@@ -4,10 +4,6 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { doubleCsrf } from 'csrf-csrf';
-import { existsSync } from 'fs';
-import { dirname } from 'path';
-import { spawn } from 'child_process';
-import { DB_PATH } from './database.js';
 import authRoutes        from './routes/auth.js';
 import userRoutes        from './routes/users.js';
 import dataRoutes        from './routes/data.js';
@@ -34,14 +30,6 @@ const apiLimiter = rateLimit({
   message: { error: 'Too many requests. Please try again later.' },
 });
 
-const adminDownloadLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many admin download requests. Please try again later.' },
-});
-
 /* eslint-disable no-undef */
 const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
   getSecret:            () => process.env.CSRF_SECRET,
@@ -58,7 +46,6 @@ const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
 });
 /* eslint-enable no-undef */
 
-
 const app = express();
 app.use(helmet());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
@@ -67,9 +54,7 @@ app.use(express.json());
 app.use('/api', apiLimiter);
 
 const csrfBypassForSafeEndpoints = (req, res, next) => {
-  // Safe HTTP methods never need CSRF protection
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
-  // Cross-origin requests from allowed origins are already gated by CORS
   const origin = req.headers.origin || '';
   if (allowedOrigins.includes(origin)) return next();
   return doubleCsrfProtection(req, res, next);
@@ -79,25 +64,6 @@ app.use('/api', csrfBypassForSafeEndpoints);
 
 app.get('/api/csrf-token', (req, res) => res.json({ token: generateCsrfToken(req, res) }));
 app.get('/api/health', (_, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
-
-/* eslint-disable no-undef */
-app.get('/admin/download-db', adminDownloadLimiter, (req, res, next) => {
-  if (req.method === 'GET') return next();
-  return doubleCsrfProtection(req, res, next);
-}, (req, res) => {
-  const adminSecret = process.env.ADMIN_SECRET;
-  if (!adminSecret || req.body?.secret !== adminSecret) return res.status(403).send('Forbidden');
-  const dataDir = dirname(DB_PATH);
-  if (!existsSync(dataDir)) return res.status(404).send('Data directory not found');
-  res.setHeader('Content-Type', 'application/gzip');
-  res.setHeader('Content-Disposition', 'attachment; filename="monetrex-data.tar.gz"');
-  const tar = spawn('tar', ['czf', '-', '-C', dataDir, '.']);
-  tar.stdout.pipe(res);
-  tar.stderr.on('data', d => console.error('tar:', d.toString()));
-  tar.on('error', err => { console.error('tar error:', err); res.destroy(); });
-});
-/* eslint-enable no-undef */
-
 
 app.use('/api/auth',         authRoutes);
 app.use('/api/me',           userRoutes);
@@ -112,6 +78,12 @@ app.use((err, _req, res, _next) => {
   res.status(err.status || 500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`\n  🚀 Monetrex API  →  http://localhost:${PORT}`);
-});
+/* eslint-disable no-undef */
+if (process.argv[1] === new URL(import.meta.url).pathname) {
+  app.listen(PORT, () => {
+    console.log(`\n  🚀 Monetrex API  →  http://localhost:${PORT}`);
+  });
+}
+/* eslint-enable no-undef */
+
+export default app;
