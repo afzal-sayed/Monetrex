@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { db } from '../database.js';
+import { query, run } from '../database.js';
 import { genId } from '../helpers.js';
 import { authenticate } from '../middleware/authenticate.js';
 
 const router = Router();
 
-router.post('/groups/:groupId/transactions', authenticate, (req, res) => {
+router.post('/groups/:groupId/transactions', authenticate, async (req, res) => {
   try {
     const { groupId } = req.params;
     const { title, amount, category, memberId, note, date, isRecurring } = req.body;
@@ -18,26 +18,28 @@ router.post('/groups/:groupId/transactions', authenticate, (req, res) => {
     if (!Number.isFinite(parsedAmount)) return res.status(400).json({ error: 'Amount must be a valid number' });
     if (!memberId) return res.status(400).json({ error: 'Member is required' });
 
-    const isMember = db.prepare(
-      'SELECT id FROM memberships WHERE group_id = ? AND user_id = ?'
-    ).get(groupId, req.userId);
+    const [isMember] = await query(
+      'SELECT id FROM memberships WHERE group_id = $1 AND user_id = $2',
+      [groupId, req.userId]
+    );
     if (!isMember) return res.status(403).json({ error: 'Not a member of this group' });
 
-    const memberExists = db.prepare(
-      'SELECT id FROM memberships WHERE id = ? AND group_id = ?'
-    ).get(memberId, groupId);
+    const [memberExists] = await query(
+      'SELECT id FROM memberships WHERE id = $1 AND group_id = $2',
+      [memberId, groupId]
+    );
     if (!memberExists) return res.status(400).json({ error: 'Invalid member for this group' });
 
     const id     = `t-${genId()}`;
     const txDate = date || new Date().toISOString().split('T')[0];
 
-    db.prepare(`
-      INSERT INTO transactions (id, group_id, member_id, title, amount, category, note, date, is_recurring)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, groupId, memberId, title.trim(), parsedAmount,
-           category || 'General', note?.trim() || '', txDate, isRecurring ? 1 : 0);
+    await run(
+      `INSERT INTO transactions (id, group_id, member_id, title, amount, category, note, date, is_recurring)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [id, groupId, memberId, title.trim(), parsedAmount, category || 'General', note?.trim() || '', txDate, isRecurring ? 1 : 0]
+    );
 
-    const transaction = db.prepare('SELECT * FROM transactions WHERE id = ?').get(id);
+    const [transaction] = await query('SELECT * FROM transactions WHERE id = $1', [id]);
     res.status(201).json({ transaction });
   } catch (e) {
     console.error('Add transaction error:', e);
@@ -45,15 +47,16 @@ router.post('/groups/:groupId/transactions', authenticate, (req, res) => {
   }
 });
 
-router.patch('/transactions/:id', authenticate, (req, res) => {
+router.patch('/transactions/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
-    const txn = db.prepare('SELECT * FROM transactions WHERE id = ?').get(id);
+    const [txn] = await query('SELECT * FROM transactions WHERE id = $1', [id]);
     if (!txn) return res.status(404).json({ error: 'Transaction not found' });
 
-    const membership = db.prepare(
-      'SELECT role, id AS membershipId FROM memberships WHERE group_id = ? AND user_id = ?'
-    ).get(txn.group_id, req.userId);
+    const [membership] = await query(
+      'SELECT role, id AS membershipId FROM memberships WHERE group_id = $1 AND user_id = $2',
+      [txn.group_id, req.userId]
+    );
     if (!membership) return res.status(403).json({ error: 'Not authorized' });
 
     const updates = {};
@@ -75,17 +78,24 @@ router.patch('/transactions/:id', authenticate, (req, res) => {
     if (date        !== undefined) updates.date         = date;
     if (isRecurring !== undefined) updates.is_recurring = isRecurring ? 1 : 0;
     if (memberId !== undefined) {
-      const memberInGroup = db.prepare('SELECT id FROM memberships WHERE id = ? AND group_id = ?').get(memberId, txn.group_id);
+      const [memberInGroup] = await query(
+        'SELECT id FROM memberships WHERE id = $1 AND group_id = $2',
+        [memberId, txn.group_id]
+      );
       if (!memberInGroup) return res.status(400).json({ error: 'Member does not belong to this group' });
       updates.member_id = memberId;
     }
 
     if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'No updates provided' });
 
-    const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
-    db.prepare(`UPDATE transactions SET ${setClause} WHERE id = ?`).run(...Object.values(updates), id);
+    const keys      = Object.keys(updates);
+    const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
+    await run(
+      `UPDATE transactions SET ${setClause} WHERE id = $${keys.length + 1}`,
+      [...Object.values(updates), id]
+    );
 
-    const updated = db.prepare('SELECT * FROM transactions WHERE id = ?').get(id);
+    const [updated] = await query('SELECT * FROM transactions WHERE id = $1', [id]);
     res.json({ transaction: updated });
   } catch (e) {
     console.error('Update transaction error:', e);
@@ -93,23 +103,24 @@ router.patch('/transactions/:id', authenticate, (req, res) => {
   }
 });
 
-router.delete('/transactions/:id', authenticate, (req, res) => {
+router.delete('/transactions/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
-    const txn = db.prepare('SELECT * FROM transactions WHERE id = ?').get(id);
+    const [txn] = await query('SELECT * FROM transactions WHERE id = $1', [id]);
     if (!txn) return res.status(404).json({ error: 'Transaction not found' });
 
-    const membership = db.prepare(
-      'SELECT role, id AS membershipId FROM memberships WHERE group_id = ? AND user_id = ?'
-    ).get(txn.group_id, req.userId);
+    const [membership] = await query(
+      'SELECT role, id AS membershipId FROM memberships WHERE group_id = $1 AND user_id = $2',
+      [txn.group_id, req.userId]
+    );
     if (!membership) return res.status(403).json({ error: 'Not authorized' });
 
     const isAdmin = ['Owner', 'Admin'].includes(membership.role);
-    if (!isAdmin && txn.member_id !== membership.membershipId) {
+    if (!isAdmin && txn.member_id !== membership.membershipid) {
       return res.status(403).json({ error: 'You can only delete your own transactions' });
     }
 
-    db.prepare('DELETE FROM transactions WHERE id = ?').run(id);
+    await run('DELETE FROM transactions WHERE id = $1', [id]);
     res.json({ ok: true });
   } catch (e) {
     console.error('Delete transaction error:', e);
