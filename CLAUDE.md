@@ -13,24 +13,29 @@ npm run preview      # Preview production build
 npm run server       # Start only the backend (node server/index.js)
 ```
 
-Both processes must be running for the app to work. The frontend talks to `http://localhost:3001/api`.
+Both processes must be running for the app to work. The frontend proxies `/api` → `http://localhost:3001` via Vite in dev.
 
 ## Architecture
 
-**React 19 + Vite SPA** with a **Express + SQLite backend** (replaced the old json-server + db.json).
+**React 19 + Vite SPA** with an **Express + PostgreSQL (Supabase) backend**, deployed entirely on Vercel.
 
 ### Backend (`server/`)
 
-- `server/index.js` — Express entry point; mounts route files, requires `JWT_SECRET` env var at startup.
+- `server/index.js` — Express entry point; mounts route files, requires `JWT_SECRET` and `CSRF_SECRET` env vars at startup. Exported as default for Vercel serverless (`api/index.js` re-exports it).
 - `server/routes/` — split by domain: `auth.js`, `users.js`, `data.js`, `groups.js`, `transactions.js`, `budgets.js`.
-- `server/middleware/authenticate.js` — JWT verification middleware, sets `req.userId`.
-- `server/helpers.js` — `genId()`, `safeUser()`, `createDefaultGroup()` (shared across routes).
-- `server/database.js` — SQLite schema via `better-sqlite3`. DB file written to `server/data/monetrex.db` (auto-created).
-- Auth: bcrypt password hashing, JWT tokens (7d expiry). Token stored client-side as `monetrex_token` in localStorage.
-- All protected routes require `Authorization: Bearer <token>` header.
+- `server/middleware/authenticate.js` — async JWT verification middleware, sets `req.userId`. Checks revoked token list in DB.
+- `server/helpers.js` — `genId()`, `safeUser()`, `createDefaultGroup()` (all async, shared across routes).
+- `server/database.js` — `pg` Pool connecting to Supabase. Exports `query(sql, params)` (returns rows array) and `run(sql, params)` (fire-and-forget). SSL enabled in production, opt-out via `PGSSL_INSECURE=1` for local dev.
+- Auth: bcrypt password hashing, JWT tokens (7d expiry). Token stored client-side as `monetrex_token` in localStorage, sent as `Authorization: Bearer <token>` header.
 - Key endpoint: `GET /api/data` returns groups + memberships + transactions + budgets for the authenticated user in a single request.
 
-**Tables:** `users`, `groups_tbl`, `memberships`, `transactions`, `budgets`
+**Tables:** `users`, `groups_tbl`, `memberships`, `transactions`, `budgets`, `revoked_tokens`, `password_reset_tokens`
+
+### Vercel Serverless Wiring
+
+- `api/index.js` — thin wrapper that re-exports the Express app as Vercel's serverless handler
+- `vercel.json` — routes `/api/*` to `api/index.js`, all other paths to `index.html` (SPA catch-all)
+- `.vercelignore` — excludes only `graphify-out/`; `server/` is included (needed by `api/index.js`)
 
 ### Frontend State (`src/context/AppContext.jsx`)
 
@@ -57,7 +62,7 @@ Both processes must be running for the app to work. The frontend talks to `http:
 
 ### Key Utilities (`src/utils/`)
 
-- `api.js` — `apiFetch()`, `getToken()`, `API` base URL (reads `VITE_API_URL` env var), `TOKEN_KEY`, `GROUP_KEY`
+- `api.js` — `apiFetch()`, `getToken()`, `API` base URL (defaults to `/api` — same origin on Vercel), `TOKEN_KEY`, `GROUP_KEY`
 - `helpers.js` — `formatDate`, `computeMonthlyData`, `computeInsights`, `CATEGORIES`, `CATEGORY_COLORS`
 - `export.js` — CSV (comma-separated) and JSON export with browser download
 
@@ -70,37 +75,59 @@ Background: `.grid-bg` CSS class applies a subtle dot-grid pattern.
 ### Key Conventions
 
 - Transaction `amount`: negative = expense, positive = income.
-- Transaction `date`: ISO format `YYYY-MM-DD` (stored in SQLite, formatted in UI via `formatDate`).
+- Transaction `date`: ISO format `YYYY-MM-DD` (stored in PostgreSQL as TEXT, formatted in UI via `formatDate`).
 - `is_recurring`: integer 0/1 in DB, boolean in JS.
+- SQL placeholders: PostgreSQL `$1, $2, ...` (not SQLite `?`). Arrays use `ANY($1)` pattern.
 - Role hierarchy: `Owner` > `Admin` > `Member`. Admins see all transactions; members see only their own.
 - `memberships.user_name` (joined from `users`) is the display name; falls back to `memberships.name`.
-- Category budgets are per-group, stored in the `budgets` table, accessible via `Settings → Budget Goals`.
+- Category budgets are per-group, stored in the `budgets` table with `UNIQUE(group_id, category, month)` constraint.
 
 ## Deployment
 
-Full deployment plan is in `DEPLOY.md`. Key files committed to the repo:
+Everything deploys to **Vercel** (frontend + backend as serverless function). Database is **Supabase** (PostgreSQL, free tier).
 
-- `vercel.json` — catch-all SPA rewrite so React Router works on Vercel (prevents 404 on refresh)
-- `.vercelignore` — excludes `server/` and `graphify-out/` from Vercel's build context so `better-sqlite3` (native module) is never compiled by Vercel
-- `.env.example` — template for all required env vars
+### Required Environment Variables (set in Vercel dashboard)
 
-**Production split:** Frontend → Vercel, Backend → Railway (Express + SQLite cannot run on Vercel serverless).
+| Variable | Purpose |
+|---|---|
+| `JWT_SECRET` | Token signing secret |
+| `CSRF_SECRET` | CSRF double-submit cookie secret |
+| `DATABASE_URL` | Supabase Session Pooler URI (port 5432) |
+| `ALLOWED_ORIGINS` | Your Vercel deployment URL (e.g. `https://monetrex.vercel.app`) |
+| `APP_URL` | Same as above — used in password reset email links |
 
-Required env vars:
+### Local Development
 
-| Where | Variable | Purpose |
-|---|---|---|
-| Vercel | `VITE_API_URL` | Railway backend URL — set **before** first build |
-| Railway | `JWT_SECRET` | Token signing secret |
-| Railway | `ALLOWED_ORIGINS` | Vercel frontend URL for CORS |
+Copy `.env.example` to `.env` and fill in:
+
+```bash
+JWT_SECRET=<any-random-string>
+CSRF_SECRET=<any-random-string>
+DATABASE_URL=postgresql://postgres.xxx:password@aws-0-ap-south-1.pooler.supabase.com:5432/postgres
+PGSSL_INSECURE=1   # needed locally if Supabase pooler cert isn't trusted by your OS
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:4173
+NODE_ENV=development
+```
+
+Get `DATABASE_URL` from: Supabase → Settings → Database → **Connection pooling → Session mode (port 5432)**.
+
+### Supabase Schema
+
+Run once in Supabase SQL Editor to create all tables (see README.md for the full SQL).
 
 ## Knowledge Graph (RAG)
 
 A pre-built knowledge graph of this codebase lives in `graphify-out/`. **Before reading source files to answer architecture or tracing questions, query the graph first.**
 
-- `graphify-out/graph.json` — full graph (183 nodes, 185 edges, 42 communities)
+- `graphify-out/graph.json` — full graph (172 nodes, 174 edges, 33 communities)
 - `graphify-out/GRAPH_REPORT.md` — community map, god nodes, surprising connections
 - `graphify-out/graph.html` — interactive visualization (open in browser)
+
+### Key god nodes (highest connectivity — start here for broad questions)
+- `useAppContext()` — 15 edges, bridges all pages, auth, modals, and data utilities
+- `useDataSlice` — 11 edges, owns all group/transaction/budget CRUD actions
+- `Frontend Helpers (helpers.js)` — 6 edges, shared formatting and compute utilities
+- `ErrorBoundary` — 5 edges, wraps all protected routes
 
 ### How to use it
 
@@ -123,12 +150,5 @@ for n in neighbors:
     print(d.get('label', n), '->', d.get('source_file',''))
 "
 ```
-
-**Key god nodes** (highest connectivity — start here for broad questions):
-- `useAppContext()` — 15 edges, bridges all pages, auth, modals, and data utilities
-- `DashboardLayout` — 8 edges, central shell for all protected routes
-- `Express + SQLite Backend` — 6 edges, bridges API docs and architecture
-- `AppProvider()` — 4 edges, composes auth/data/UI slices and cross-cutting actions
-- `GET /api/data` — 4 edges, single endpoint serving all frontend state
 
 **Run `/graphify query "<question>"` to traverse the graph** for any architecture question before reading source files directly. Update the graph after significant code changes with `/graphify . --update`.

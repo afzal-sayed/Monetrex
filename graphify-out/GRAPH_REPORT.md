@@ -1,333 +1,355 @@
-# Graph Report - .  (2026-04-16)
+# Graph Report - .  (2026-05-30)
 
 ## Corpus Check
-- Corpus is ~25,057 words - fits in a single context window. You may not need a graph.
+- 55 files · ~46,000 words
+- Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 264 nodes · 310 edges · 44 communities detected
-- Extraction: 85% EXTRACTED · 15% INFERRED · 0% AMBIGUOUS · INFERRED: 46 edges (avg confidence: 0.81)
+- 245 nodes · 234 edges · 48 communities detected
+- Extraction: 82% EXTRACTED · 18% INFERRED · 0% AMBIGUOUS · INFERRED: 41 edges (avg confidence: 0.78)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_App Context & Actions|App Context & Actions]]
-- [[_COMMUNITY_CLAUDE.md Documentation|CLAUDE.md Documentation]]
-- [[_COMMUNITY_Page & Component Files|Page & Component Files]]
-- [[_COMMUNITY_Deployment Documentation|Deployment Documentation]]
-- [[_COMMUNITY_Express Backend Core|Express Backend Core]]
-- [[_COMMUNITY_App Shell & UI Components|App Shell & UI Components]]
-- [[_COMMUNITY_Vite Template & README|Vite Template & README]]
-- [[_COMMUNITY_Context Provider Slices|Context Provider Slices]]
-- [[_COMMUNITY_Helpers & Analytics Utils|Helpers & Analytics Utils]]
-- [[_COMMUNITY_SVG Icons|SVG Icons]]
-- [[_COMMUNITY_ErrorBoundary Class|ErrorBoundary Class]]
-- [[_COMMUNITY_Server Helpers|Server Helpers]]
-- [[_COMMUNITY_cn Utility & Modal|cn Utility & Modal]]
-- [[_COMMUNITY_Export Utils (CSVJSON)|Export Utils (CSV/JSON)]]
-- [[_COMMUNITY_Static Assets|Static Assets]]
-- [[_COMMUNITY_Auth Route Helpers|Auth Route Helpers]]
-- [[_COMMUNITY_API Fetch Utilities|API Fetch Utilities]]
-- [[_COMMUNITY_Toast UI Component|Toast UI Component]]
-- [[_COMMUNITY_Dashboard Layout|Dashboard Layout]]
-- [[_COMMUNITY_Mobile Navigation|Mobile Navigation]]
-- [[_COMMUNITY_Auth Middleware|Auth Middleware]]
-- [[_COMMUNITY_Users Route|Users Route]]
-- [[_COMMUNITY_Confirm Modal|Confirm Modal]]
-- [[_COMMUNITY_ESLint Config|ESLint Config]]
-- [[_COMMUNITY_SQLite Database|SQLite Database]]
-- [[_COMMUNITY_Express Server Entry|Express Server Entry]]
-- [[_COMMUNITY_genId Helper|genId Helper]]
-- [[_COMMUNITY_safeUser Helper|safeUser Helper]]
-- [[_COMMUNITY_authenticate Import|authenticate Import]]
-- [[_COMMUNITY_React Entry Point|React Entry Point]]
-- [[_COMMUNITY_Card Component|Card Component]]
-- [[_COMMUNITY_Button Component|Button Component]]
-- [[_COMMUNITY_Toggle Component|Toggle Component]]
-- [[_COMMUNITY_Input Component|Input Component]]
-- [[_COMMUNITY_getToken (deprecated)|getToken (deprecated)]]
-- [[_COMMUNITY_apiFetch (AppContext)|apiFetch (AppContext)]]
-- [[_COMMUNITY_CLAUDE.md Export Ref|CLAUDE.md Export Ref]]
-- [[_COMMUNITY_React Logo Asset|React Logo Asset]]
-- [[_COMMUNITY_Transactions Route|Transactions Route]]
-- [[_COMMUNITY_Data Route|Data Route]]
-- [[_COMMUNITY_Groups Route|Groups Route]]
-- [[_COMMUNITY_Budgets Route|Budgets Route]]
-- [[_COMMUNITY_genJti Helper|genJti Helper]]
-- [[_COMMUNITY_Vite Config|Vite Config]]
+- [[_COMMUNITY_Community 0|Community 0]]
+- [[_COMMUNITY_Community 1|Community 1]]
+- [[_COMMUNITY_Community 2|Community 2]]
+- [[_COMMUNITY_Community 3|Community 3]]
+- [[_COMMUNITY_Community 4|Community 4]]
+- [[_COMMUNITY_Community 5|Community 5]]
+- [[_COMMUNITY_Community 6|Community 6]]
+- [[_COMMUNITY_Community 7|Community 7]]
+- [[_COMMUNITY_Community 8|Community 8]]
+- [[_COMMUNITY_Community 9|Community 9]]
+- [[_COMMUNITY_Community 10|Community 10]]
+- [[_COMMUNITY_Community 11|Community 11]]
+- [[_COMMUNITY_Community 12|Community 12]]
+- [[_COMMUNITY_Community 13|Community 13]]
+- [[_COMMUNITY_Community 14|Community 14]]
+- [[_COMMUNITY_Community 15|Community 15]]
+- [[_COMMUNITY_Community 16|Community 16]]
+- [[_COMMUNITY_Community 17|Community 17]]
+- [[_COMMUNITY_Community 18|Community 18]]
+- [[_COMMUNITY_Community 19|Community 19]]
+- [[_COMMUNITY_Community 20|Community 20]]
+- [[_COMMUNITY_Community 21|Community 21]]
+- [[_COMMUNITY_Community 22|Community 22]]
+- [[_COMMUNITY_Community 23|Community 23]]
+- [[_COMMUNITY_Community 24|Community 24]]
+- [[_COMMUNITY_Community 25|Community 25]]
+- [[_COMMUNITY_Community 26|Community 26]]
+- [[_COMMUNITY_Community 27|Community 27]]
+- [[_COMMUNITY_Community 28|Community 28]]
+- [[_COMMUNITY_Community 29|Community 29]]
+- [[_COMMUNITY_Community 30|Community 30]]
+- [[_COMMUNITY_Community 31|Community 31]]
+- [[_COMMUNITY_Community 32|Community 32]]
+- [[_COMMUNITY_Community 33|Community 33]]
+- [[_COMMUNITY_Community 34|Community 34]]
+- [[_COMMUNITY_Community 35|Community 35]]
+- [[_COMMUNITY_Community 36|Community 36]]
+- [[_COMMUNITY_Community 37|Community 37]]
+- [[_COMMUNITY_Community 38|Community 38]]
+- [[_COMMUNITY_Community 39|Community 39]]
+- [[_COMMUNITY_Community 40|Community 40]]
+- [[_COMMUNITY_Community 41|Community 41]]
+- [[_COMMUNITY_Community 42|Community 42]]
+- [[_COMMUNITY_Community 43|Community 43]]
+- [[_COMMUNITY_Community 44|Community 44]]
+- [[_COMMUNITY_Community 45|Community 45]]
+- [[_COMMUNITY_Community 46|Community 46]]
+- [[_COMMUNITY_Community 47|Community 47]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `useAppContext()` - 15 edges
-2. `AppContext / AppProvider` - 12 edges
-3. `Express + SQLite Backend` - 11 edges
-4. `useDataSlice` - 11 edges
-5. `Family Page` - 10 edges
-6. `DashboardLayout — Protected Shell` - 9 edges
-7. `AppContext.jsx — Central Frontend State` - 8 edges
-8. `Application Architecture Overview` - 8 edges
-9. `DEPLOY.md — Vercel Deployment Plan` - 8 edges
-10. `Settings Page` - 8 edges
+2. `useDataSlice` - 11 edges
+3. `server/index.js (Express Entry Point)` - 9 edges
+4. `Option A: Vercel + Fly.io (Recommended)` - 8 edges
+5. `Option B: Vercel + Render.com` - 7 edges
+6. `Route: GET /api/data (all frontend state in one request)` - 7 edges
+7. `DashboardLayout (Protected Shell)` - 7 edges
+8. `Frontend Helpers (helpers.js)` - 6 edges
+9. `icons.svg (SVG Sprite Sheet for Social/UI Icons)` - 6 edges
+10. `Option C: Full Vercel + Turso` - 6 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `Security Badge: bcrypt + HttpOnly Cookies` --conceptually_related_to--> `better-sqlite3 Native Module`  [INFERRED]
+  auth-page.png → DEPLOY.md
 - `favicon.svg (App Logo - Lightning Bolt / Stacked Layers, Purple Gradient)` --semantically_similar_to--> `vite.svg (Vite Official Logo - Lightning Bolt, Purple/Cyan Gradient)`  [INFERRED] [semantically similar]
   public/favicon.svg → src/assets/vite.svg
-- `favicon.svg (App Logo - Lightning Bolt / Stacked Layers, Purple Gradient)` --semantically_similar_to--> `hero.png (Isometric Stacked Layer Illustration)`  [INFERRED] [semantically similar]
-  public/favicon.svg → src/assets/hero.png
-- `computeInsights()` --conceptually_related_to--> `Transaction Amount Sign Convention (negative=expense)`  [INFERRED]
-  src/utils/helpers.js → CLAUDE.md
-- `isAdmin Derived Flag` --rationale_for--> `Role Hierarchy (Owner > Admin > Member)`  [EXTRACTED]
-  src/context/AppContext.jsx → CLAUDE.md
-- `Transaction Amount Sign Convention (negative=expense)` --conceptually_related_to--> `memberStats useMemo (per-member financials)`  [INFERRED]
-  CLAUDE.md → src/pages/Family.jsx
+- `hero.png (Isometric Stacked Layer Illustration)` --semantically_similar_to--> `favicon.svg (App Logo - Lightning Bolt / Stacked Layers, Purple Gradient)`  [INFERRED] [semantically similar]
+  src/assets/hero.png → public/favicon.svg
+- `Dashboard UI (After Transaction Added)` --references--> `Monthly Overview Bar/Line Chart (6-month view)`  [EXTRACTED]
+  after-transaction.png → dashboard.png
+- `Dashboard UI (After Transaction Added)` --references--> `Category Split Chart`  [EXTRACTED]
+  after-transaction.png → dashboard.png
+
+## Hyperedges (group relationships)
+- **Monetrex Full Tech Stack** — tech_react19_vite, tech_expressjs, tech_postgresql_supabase, tech_vercel_hosting, tech_tailwindcss, tech_recharts, tech_jwt_auth, tech_bcrypt, tech_csrf, tech_resend_email [EXTRACTED 1.00]
+- **Vercel Unified Deployment (Frontend + Serverless Backend)** — file_api_index, file_server_index, file_vercel_json, deploy_vercel_unified, rationale_unified_vercel [EXTRACTED 1.00]
+- **Express Backend Route Files** — file_route_auth, file_route_users, file_route_data, file_route_groups, file_route_transactions, file_route_budgets [EXTRACTED 1.00]
+- **PostgreSQL Database Schema Tables** — db_table_users, db_table_groups_tbl, db_table_memberships, db_table_transactions, db_table_budgets, db_table_revoked_tokens, db_table_password_reset_tokens [EXTRACTED 1.00]
+- **Frontend State Management Slices** — file_appprovider, file_useauthslice, file_usedataslice, file_useuislice, file_appcontext [EXTRACTED 1.00]
+- **Required Environment Variables for Vercel** — envvar_jwt_secret, envvar_csrf_secret, envvar_database_url, envvar_allowed_origins, envvar_app_url [EXTRACTED 1.00]
+- **Frontend Protected Pages** — page_dashboard, page_transactions, page_analytics, page_family, page_settings [EXTRACTED 1.00]
 
 ## Communities
 
-### Community 0 - "App Context & Actions"
-Cohesion: 0.07
-Nodes (51): activeBudgets Derived State, AddExpenseModal Component, addFamilyMember() Action, addTransaction() Action, Transaction Amount Sign Convention (negative=expense), AppContext / AppProvider, Auth Page, BudgetSection Component (inline Settings) (+43 more)
-
-### Community 1 - "CLAUDE.md Documentation"
+### Community 0 - "Community 0"
 Cohesion: 0.06
-Nodes (44): Analytics.jsx Page, GET /api/data — Aggregate Data Endpoint, apiFetch() — JWT-attached API Utility, App.jsx (Router Root), AppContext.jsx — Central Frontend State, App.jsx — Root Router with AppProvider + ErrorBoundary, Application Architecture Overview, JWT Auth (bcrypt + 7d token) (+36 more)
+Nodes (19): Analytics(), AppInner(), AuthRoute(), ErrorBoundary, ProtectedRoute(), Auth(), useAppContext(), Dashboard() (+11 more)
 
-### Community 2 - "Page & Component Files"
-Cohesion: 0.07
-Nodes (16): AddExpenseModal(), emptyForm(), today(), Analytics(), AppInner(), AuthRoute(), ProtectedRoute(), Auth() (+8 more)
+### Community 1 - "Community 1"
+Cohesion: 0.08
+Nodes (26): Convention: Role Hierarchy Owner > Admin > Member, DB Table: budgets, DB Table: groups_tbl, DB Table: memberships, DB Table: password_reset_tokens, DB Table: revoked_tokens, Env Var: CSRF_SECRET, Env Var: JWT_SECRET (+18 more)
 
-### Community 3 - "Deployment Documentation"
+### Community 2 - "Community 2"
+Cohesion: 0.1
+Nodes (22): Monetrex App (CLAUDE.md), Convention: PostgreSQL $1,$2,... placeholders, Deployment: Supabase PostgreSQL Database, Env Var: APP_URL (for password reset links), Env Var: DATABASE_URL (Supabase Session Pooler URI), Env Var: PGSSL_INSECURE (local dev only), Env Var: RESEND_API_KEY (optional), Env Var: RESEND_FROM_EMAIL (optional) (+14 more)
+
+### Community 3 - "Community 3"
+Cohesion: 0.16
+Nodes (21): Deployment Architecture Overview, better-sqlite3 Native Module, CORS ALLOWED_ORIGINS env var, Critical Blocker: better-sqlite3 on Vercel, DATA_DIR Environment Variable, Deployment Decision Summary Table, Dockerfile (multi-stage, better-sqlite3 native build), Edge Cases and Gotchas (+13 more)
+
+### Community 4 - "Community 4"
 Cohesion: 0.13
-Nodes (22): src/utils/api.js — apiFetch, getToken, API base URL, Deployment Overview (Vercel + Railway), server/database.js — SQLite Schema (better-sqlite3), server/index.js — Express Entry Point, server/data/monetrex.db (SQLite File), Architecture Table: Dev vs Prod Options, Sync→Async DB Migration (better-sqlite3 → libsql), Pre-Deploy Checklist (+14 more)
+Nodes (19): Add Transaction Modal UI, Dashboard UI (After Transaction Added), Auth Page UI (Login Screen), Dashboard UI (Empty State), Add Expense / Income Modal, Assign To Field (group member assignment), Category Selector (Food, Dining Out, Rent, Housing, Transport, Fuel, etc.), Category Split Chart (+11 more)
 
-### Community 4 - "Express Backend Core"
-Cohesion: 0.4
-Nodes (10): JWT JTI Revocation (revoked_tokens table), SQLite Database (db), SQLite Schema (users, groups_tbl, memberships, transactions, budgets, revoked_tokens, password_reset_tokens), createDefaultGroup(), genId(), Express App Entry Point, authenticate() middleware, Budget Routes (/api/groups/:groupId/budgets) (+2 more)
+### Community 5 - "Community 5"
+Cohesion: 0.12
+Nodes (14): addFamilyMember() Action, addTransaction() Action, AppProvider(), createGroup() Action, deleteTransaction() Action, leaveGroup() Action, removeFamilyMember() Action, renameGroup() Action (+6 more)
 
-### Community 5 - "App Shell & UI Components"
-Cohesion: 0.24
-Nodes (11): AppInner (inner app component), AuthRoute, ErrorBoundary (React class), App.jsx (Root Component), ProtectedRoute, AppProvider, useAppContext(), AddExpenseModal Component (+3 more)
+### Community 6 - "Community 6"
+Cohesion: 0.19
+Nodes (7): signToken(), authenticate(), query(), run(), createDefaultGroup(), genId(), genJti()
 
-### Community 6 - "Vite Template & README"
-Cohesion: 0.24
-Nodes (10): CLAUDE.md Project Guidance, React 19 + Vite SPA Frontend, TypeScript + typescript-eslint Recommendation, @vitejs/plugin-react (Oxc-based), @vitejs/plugin-react-swc (SWC-based), Rationale: React Compiler disabled due to dev/build performance impact, React Compiler (not enabled by default), README — React + Vite Template (+2 more)
-
-### Community 7 - "Context Provider Slices"
+### Community 7 - "Community 7"
 Cohesion: 0.25
-Nodes (4): AppProvider(), useAuthSlice(), useDataSlice(), useUISlice()
+Nodes (6): CATEGORIES List, CATEGORY_COLORS Constant, CATEGORY_EMOJI Constant, computeInsights(), Frontend Helpers (helpers.js), InsightsPanel Component
 
-### Community 8 - "Helpers & Analytics Utils"
+### Community 8 - "Community 8"
+Cohesion: 0.25
+Nodes (8): DashboardLayout (Protected Shell), MobileNav.jsx, Sidebar.jsx, Page: /analytics (Analytics.jsx), Page: /dashboard (Dashboard.jsx), Page: /family (Family.jsx), Page: /settings (Settings.jsx), Page: /transactions (Transactions.jsx)
+
+### Community 9 - "Community 9"
 Cohesion: 0.29
-Nodes (2): computeInsights(), InsightsPanel()
+Nodes (8): ErrorBoundary, ProtectedRoute (Auth Guard), App.jsx (Router Root), src/context/AppContext.jsx (Global State), AppProvider (State Composer), useAuthSlice (Auth State Slice), useDataSlice (Data State Slice), useUISlice (UI State Slice)
 
-### Community 9 - "SVG Icons"
+### Community 10 - "Community 10"
 Cohesion: 0.33
 Nodes (7): Bluesky Social Icon, Discord Social Icon, Documentation Icon (purple stroke), GitHub Social Icon, Social/Members Icon, icons.svg (SVG Sprite Sheet for Social/UI Icons), X (Twitter) Social Icon
 
-### Community 10 - "ErrorBoundary Class"
+### Community 11 - "Community 11"
+Cohesion: 0.6
+Nodes (3): Budgets(), fmt(), toLabel()
+
+### Community 12 - "Community 12"
 Cohesion: 0.4
-Nodes (1): ErrorBoundary
+Nodes (5): Convention: amount negative=expense, positive=income, Convention: date ISO YYYY-MM-DD, Convention: is_recurring 0/1 in DB, boolean in JS, DB Table: transactions, src/utils/helpers.js (formatDate, computeMonthlyData)
 
-### Community 11 - "Server Helpers"
-Cohesion: 0.5
-Nodes (2): createDefaultGroup(), genId()
-
-### Community 12 - "cn Utility & Modal"
+### Community 13 - "Community 13"
 Cohesion: 0.5
 Nodes (2): cn(), Modal()
 
-### Community 13 - "Export Utils (CSV/JSON)"
+### Community 14 - "Community 14"
 Cohesion: 0.83
-Nodes (3): downloadBlob(), exportToCSV(), exportToJSON()
+Nodes (3): apiFetch(), fetchCsrfToken(), getToken()
 
-### Community 14 - "Static Assets"
+### Community 15 - "Community 15"
 Cohesion: 0.67
 Nodes (3): favicon.svg (App Logo - Lightning Bolt / Stacked Layers, Purple Gradient), hero.png (Isometric Stacked Layer Illustration), vite.svg (Vite Official Logo - Lightning Bolt, Purple/Cyan Gradient)
 
-### Community 15 - "Auth Route Helpers"
-Cohesion: 0.67
-Nodes (0): 
-
-### Community 16 - "API Fetch Utilities"
-Cohesion: 0.67
-Nodes (0): 
-
-### Community 17 - "Toast UI Component"
+### Community 16 - "Community 16"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 18 - "Dashboard Layout"
+### Community 17 - "Community 17"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 19 - "Mobile Navigation"
+### Community 18 - "Community 18"
+Cohesion: 1.0
+Nodes (2): Deployment: Vercel (Frontend + Backend on one domain), WHY: Single Vercel domain eliminates CORS
+
+### Community 19 - "Community 19"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 20 - "Auth Middleware"
+### Community 20 - "Community 20"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 21 - "Users Route"
+### Community 21 - "Community 21"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 22 - "Confirm Modal"
+### Community 22 - "Community 22"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 23 - "ESLint Config"
+### Community 23 - "Community 23"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 24 - "SQLite Database"
+### Community 24 - "Community 24"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 25 - "Express Server Entry"
+### Community 25 - "Community 25"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 26 - "genId Helper"
+### Community 26 - "Community 26"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 27 - "safeUser Helper"
+### Community 27 - "Community 27"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 28 - "authenticate Import"
+### Community 28 - "Community 28"
+Cohesion: 1.0
+Nodes (1): AddExpenseModal Component
+
+### Community 29 - "Community 29"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 29 - "React Entry Point"
+### Community 30 - "Community 30"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 30 - "Card Component"
+### Community 31 - "Community 31"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 31 - "Button Component"
+### Community 32 - "Community 32"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 32 - "Toggle Component"
+### Community 33 - "Community 33"
 Cohesion: 1.0
-Nodes (0): 
+Nodes (1): Export Utility (export.js)
 
-### Community 33 - "Input Component"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 34 - "getToken (deprecated)"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 35 - "apiFetch (AppContext)"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 36 - "CLAUDE.md Export Ref"
-Cohesion: 1.0
-Nodes (1): export.js Utility (CSV + JSON Download)
-
-### Community 37 - "React Logo Asset"
+### Community 34 - "Community 34"
 Cohesion: 1.0
 Nodes (1): react.svg (React Official Logo - Atom/Electron Style, Cyan)
 
-### Community 38 - "Transactions Route"
+### Community 35 - "Community 35"
 Cohesion: 1.0
-Nodes (0): 
+Nodes (1): Pre-Deploy Checklist
 
-### Community 39 - "Data Route"
+### Community 36 - "Community 36"
 Cohesion: 1.0
-Nodes (0): 
+Nodes (1): bcrypt Password Hashing
 
-### Community 40 - "Groups Route"
+### Community 37 - "Community 37"
 Cohesion: 1.0
-Nodes (0): 
+Nodes (1): server/helpers.js (genId, safeUser, createDefaultGroup)
 
-### Community 41 - "Budgets Route"
+### Community 38 - "Community 38"
 Cohesion: 1.0
-Nodes (0): 
+Nodes (1): .env.example (Environment Template)
 
-### Community 42 - "genJti Helper"
+### Community 39 - "Community 39"
 Cohesion: 1.0
-Nodes (0): 
+Nodes (1): DB Table: users
 
-### Community 43 - "Vite Config"
+### Community 40 - "Community 40"
 Cohesion: 1.0
-Nodes (0): 
+Nodes (1): Page: /auth (Auth.jsx, public)
+
+### Community 41 - "Community 41"
+Cohesion: 1.0
+Nodes (1): Env Var: ALLOWED_ORIGINS
+
+### Community 42 - "Community 42"
+Cohesion: 1.0
+Nodes (1): Command: npm install
+
+### Community 43 - "Community 43"
+Cohesion: 1.0
+Nodes (1): Command: npm run dev (Vite 5173 + Express 3001)
+
+### Community 44 - "Community 44"
+Cohesion: 1.0
+Nodes (1): Command: npm run build
+
+### Community 45 - "Community 45"
+Cohesion: 1.0
+Nodes (1): Command: npm run lint (ESLint)
+
+### Community 46 - "Community 46"
+Cohesion: 1.0
+Nodes (1): Command: npm run preview
+
+### Community 47 - "Community 47"
+Cohesion: 1.0
+Nodes (1): Command: npm run server (Express only)
 
 ## Knowledge Gaps
-- **50 isolated node(s):** `server/data/monetrex.db (SQLite File)`, `ErrorBoundary`, `Dashboard.jsx Page`, `Analytics.jsx Page`, `Family.jsx Page` (+45 more)
+- **87 isolated node(s):** `AddExpenseModal Component`, `InsightsPanel Component`, `Toast Component`, `addTransaction() Action`, `updateTransaction() Action` (+82 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Toast UI Component`** (2 nodes): `Toast.jsx`, `Toast()`
+- **Thin community `Community 16`** (2 nodes): `users.js`, `isValidEmail()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Dashboard Layout`** (2 nodes): `DashboardLayout()`, `DashboardLayout.jsx`
+- **Thin community `Community 17`** (2 nodes): `DashboardLayout()`, `DashboardLayout.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Mobile Navigation`** (2 nodes): `MobileNav()`, `MobileNav.jsx`
+- **Thin community `Community 18`** (2 nodes): `Deployment: Vercel (Frontend + Backend on one domain)`, `WHY: Single Vercel domain eliminates CORS`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Auth Middleware`** (2 nodes): `authenticate()`, `authenticate.js`
+- **Thin community `Community 19`** (1 nodes): `eslint.config.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Users Route`** (2 nodes): `users.js`, `isValidEmail()`
+- **Thin community `Community 20`** (1 nodes): `vite.config.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Confirm Modal`** (2 nodes): `ConfirmModal()`, `ConfirmModal.jsx`
+- **Thin community `Community 21`** (1 nodes): `index.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `ESLint Config`** (1 nodes): `eslint.config.js`
+- **Thin community `Community 22`** (1 nodes): `index.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `SQLite Database`** (1 nodes): `database.js`
+- **Thin community `Community 23`** (1 nodes): `transactions.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Express Server Entry`** (1 nodes): `index.js`
+- **Thin community `Community 24`** (1 nodes): `data.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `genId Helper`** (1 nodes): `genId()`
+- **Thin community `Community 25`** (1 nodes): `groups.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `safeUser Helper`** (1 nodes): `safeUser()`
+- **Thin community `Community 26`** (1 nodes): `budgets.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `authenticate Import`** (1 nodes): `authenticate()`
+- **Thin community `Community 27`** (1 nodes): `main.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `React Entry Point`** (1 nodes): `main.jsx`
+- **Thin community `Community 28`** (1 nodes): `AddExpenseModal Component`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Card Component`** (1 nodes): `Card.jsx`
+- **Thin community `Community 29`** (1 nodes): `Card.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Button Component`** (1 nodes): `Button.jsx`
+- **Thin community `Community 30`** (1 nodes): `Button.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Toggle Component`** (1 nodes): `Toggle.jsx`
+- **Thin community `Community 31`** (1 nodes): `Toggle.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Input Component`** (1 nodes): `Input.jsx`
+- **Thin community `Community 32`** (1 nodes): `Input.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `getToken (deprecated)`** (1 nodes): `getToken()`
+- **Thin community `Community 33`** (1 nodes): `Export Utility (export.js)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `apiFetch (AppContext)`** (1 nodes): `apiFetch()`
+- **Thin community `Community 34`** (1 nodes): `react.svg (React Official Logo - Atom/Electron Style, Cyan)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `CLAUDE.md Export Ref`** (1 nodes): `export.js Utility (CSV + JSON Download)`
+- **Thin community `Community 35`** (1 nodes): `Pre-Deploy Checklist`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `React Logo Asset`** (1 nodes): `react.svg (React Official Logo - Atom/Electron Style, Cyan)`
+- **Thin community `Community 36`** (1 nodes): `bcrypt Password Hashing`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Transactions Route`** (1 nodes): `transactions.js`
+- **Thin community `Community 37`** (1 nodes): `server/helpers.js (genId, safeUser, createDefaultGroup)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Data Route`** (1 nodes): `data.js`
+- **Thin community `Community 38`** (1 nodes): `.env.example (Environment Template)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Groups Route`** (1 nodes): `groups.js`
+- **Thin community `Community 39`** (1 nodes): `DB Table: users`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Budgets Route`** (1 nodes): `budgets.js`
+- **Thin community `Community 40`** (1 nodes): `Page: /auth (Auth.jsx, public)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `genJti Helper`** (1 nodes): `genJti()`
+- **Thin community `Community 41`** (1 nodes): `Env Var: ALLOWED_ORIGINS`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Vite Config`** (1 nodes): `vite.config.js`
+- **Thin community `Community 42`** (1 nodes): `Command: npm install`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-
-## Suggested Questions
-_Questions this graph is uniquely positioned to answer:_
-
-- **Why does `Application Architecture Overview` connect `CLAUDE.md Documentation` to `Vite Template & README`?**
-  _High betweenness centrality (0.041) - this node is a cross-community bridge._
-- **Why does `Express + SQLite Backend` connect `CLAUDE.md Documentation` to `Deployment Documentation`, `Vite Template & README`?**
-  _High betweenness centrality (0.029) - this node is a cross-community bridge._
-- **Why does `useAppContext()` connect `Page & Component Files` to `Helpers & Analytics Utils`?**
-  _High betweenness centrality (0.024) - this node is a cross-community bridge._
-- **Are the 14 inferred relationships involving `useAppContext()` (e.g. with `ProtectedRoute()` and `AuthRoute()`) actually correct?**
-  _`useAppContext()` has 14 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `server/data/monetrex.db (SQLite File)`, `ErrorBoundary`, `Dashboard.jsx Page` to the rest of the system?**
-  _50 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `App Context & Actions` be split into smaller, more focused modules?**
-  _Cohesion score 0.07 - nodes in this community are weakly interconnected._
-- **Should `CLAUDE.md Documentation` be split into smaller, more focused modules?**
-  _Cohesion score 0.06 - nodes in this community are weakly interconnected._
+- **Thin community `Community 43`** (1 nodes): `Command: npm run dev (Vite 5173 + Express 3001)`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 44`** (1 nodes): `Command: npm run build`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 45`** (1 nodes): `Command: npm run lint (ESLint)`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 46`** (1 nodes): `Command: npm run preview`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 47`** (1 nodes): `Command: npm run server (Express only)`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
