@@ -54,3 +54,5 @@ graphify-out/cost.json
 graphify-out/*.canvas
 graphify-out/*.base
 graphify-out/[0-9][0-9][0-9][0-9]-*.md
+.vercel
+.playwright-mcp/
