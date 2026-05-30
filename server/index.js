@@ -53,14 +53,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use('/api', apiLimiter);
 
-const csrfBypassForSafeEndpoints = (req, res, next) => {
-  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
-  const origin = req.headers.origin || '';
-  if (allowedOrigins.includes(origin)) return next();
-  return doubleCsrfProtection(req, res, next);
-};
-
-app.use('/api', csrfBypassForSafeEndpoints);
+app.use('/api', doubleCsrfProtection);
 
 app.get('/api/csrf-token', (req, res) => res.json({ token: generateCsrfToken(req, res) }));
 app.get('/api/health', (_, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
