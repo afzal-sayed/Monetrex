@@ -4,7 +4,9 @@ const { Pool } = pg;
 /* eslint-disable no-undef */
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? true : false,
+  ssl: process.env.DATABASE_URL
+    ? (process.env.NODE_ENV === 'production' ? true : { rejectUnauthorized: false })
+    : false,
   max: 2,
 });
 /* eslint-enable no-undef */
