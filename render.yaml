@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: monetrex-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server/index.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: CSRF_SECRET
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: ADMIN_SECRET
+        sync: false
+      - key: DATA_DIR
+        value: /tmp/data

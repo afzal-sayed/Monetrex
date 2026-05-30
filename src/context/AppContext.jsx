@@ -1,6 +1,6 @@
 import React, { createContext, useEffect, useCallback, useMemo } from 'react';
 import { computeMonthlyData } from '../utils/helpers';
-import { apiFetch, fetchCsrfToken, GROUP_KEY } from '../utils/api';
+import { apiFetch, fetchCsrfToken, GROUP_KEY, TOKEN_KEY } from '../utils/api';
 import { useUISlice }   from './slices/useUISlice';
 import { useAuthSlice } from './slices/useAuthSlice';
 import { useDataSlice } from './slices/useDataSlice';
@@ -123,6 +123,7 @@ export const AppProvider = ({ children }) => {
   const logout = useCallback(async () => {
     // Ask the server to revoke the JTI and clear the HttpOnly cookie
     try { await apiFetch('/auth/logout', { method: 'POST' }); } catch { /* ignore network errors */ }
+    localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(GROUP_KEY);
     setUser(null);
     clearAll();

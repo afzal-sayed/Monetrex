@@ -46,7 +46,7 @@ const adminDownloadLimiter = rateLimit({
 const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
   getSecret:            () => process.env.CSRF_SECRET,
   getSessionIdentifier: () => '',
-  cookieName:    IS_PROD ? '__Host-x-csrf-token' : 'x-csrf-token',
+  cookieName:    'x-csrf-token',
   cookieOptions: {
     httpOnly: true,
     sameSite: IS_PROD ? 'none' : 'lax',
@@ -67,12 +67,11 @@ app.use(express.json());
 app.use('/api', apiLimiter);
 
 const csrfBypassForSafeEndpoints = (req, res, next) => {
-  if (
-    req.method === 'GET' &&
-    (req.path === '/csrf-token' || req.path === '/health')
-  ) {
-    return next();
-  }
+  // Safe HTTP methods never need CSRF protection
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+  // Cross-origin requests from allowed origins are already gated by CORS
+  const origin = req.headers.origin || '';
+  if (allowedOrigins.includes(origin)) return next();
   return doubleCsrfProtection(req, res, next);
 };
 

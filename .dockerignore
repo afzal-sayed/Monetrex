@@ -1,0 +1,9 @@
+node_modules
+src
+public
+dist
+graphify-out
+.git
+.env
+.env.*
+!.env.example
