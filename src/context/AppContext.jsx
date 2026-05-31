@@ -23,9 +23,11 @@ export const AppProvider = ({ children }) => {
     transactions, setTransactions, family, setFamily,
     groups, setGroups, budgets, setBudgets,
     activeGroupId, setActiveGroupId, clearAll,
+    customCategories, setCustomCategories,
     addTransaction, updateTransaction, deleteTransaction,
     createGroup, switchGroup, renameGroup, leaveGroup: leaveGroupRaw,
     addFamilyMember, removeFamilyMember, updateBudgets,
+    addCustomCategory, deleteCustomCategory,
   } = data;
 
   // ── Fetch all app data ────────────────────────────────────────────────────
@@ -56,13 +58,14 @@ export const AppProvider = ({ children }) => {
         budgetMap[b.group_id][mKey][b.category] = b.amount;
       });
       setBudgets(budgetMap);
+      setCustomCategories(d.customCategories || []);
     } catch (e) {
       if (import.meta.env.DEV) console.error('fetchData error:', e);
       showToast('Failed to load data. Is the server running?', 'error');
     } finally {
       setIsLoading(false);
     }
-  }, [showToast, setIsLoading, setUser, setGroups, setFamily, setTransactions, setBudgets, clearAll]);
+  }, [showToast, setIsLoading, setUser, setGroups, setFamily, setTransactions, setBudgets, setCustomCategories, clearAll]);
 
   useEffect(() => {
     if (authReady && user) fetchData();
@@ -182,6 +185,9 @@ export const AppProvider = ({ children }) => {
 
       // Chart data
       monthlyData,
+
+      // Custom categories
+      customCategories, addCustomCategory, deleteCustomCategory,
 
       // Loading / Toast
       isLoading, toasts, showToast,

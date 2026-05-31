@@ -6,7 +6,8 @@ export const useDataSlice = ({ showToast }) => {
   const [family,        setFamily]        = useState([]);
   const [groups,        setGroups]        = useState([]);
   const [budgets,       setBudgets]       = useState({});
-  const [activeGroupId, setActiveGroupId] = useState(() => localStorage.getItem(GROUP_KEY) || null);
+  const [activeGroupId,     setActiveGroupId]     = useState(() => localStorage.getItem(GROUP_KEY) || null);
+  const [customCategories,  setCustomCategories]  = useState([]);
 
   // ── Persist active group ──────────────────────────────────────────────────
   useEffect(() => {
@@ -20,6 +21,7 @@ export const useDataSlice = ({ showToast }) => {
     setGroups([]);
     setBudgets({});
     setActiveGroupId(null);
+    setCustomCategories([]);
   }, []);
 
   // ── Transactions ──────────────────────────────────────────────────────────
@@ -187,6 +189,33 @@ export const useDataSlice = ({ showToast }) => {
     }
   };
 
+  const addCustomCategory = async (name, type = 'expense') => {
+    try {
+      const res  = await apiFetch('/me/categories', { method: 'POST', body: JSON.stringify({ name, type }) });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || 'Failed to add category', 'error'); return null; }
+      setCustomCategories((prev) => [...prev, data.category]);
+      showToast(`"${name}" category added!`);
+      return data.category;
+    } catch {
+      showToast('Failed to add category', 'error');
+      return null;
+    }
+  };
+
+  const deleteCustomCategory = async (id, name) => {
+    try {
+      const res = await apiFetch(`/me/categories/${id}`, { method: 'DELETE' });
+      if (!res.ok) { const d = await res.json(); showToast(d.error || 'Failed to delete category', 'error'); return false; }
+      setCustomCategories((prev) => prev.filter((c) => c.id !== id));
+      showToast(`"${name}" category removed`, 'info');
+      return true;
+    } catch {
+      showToast('Failed to delete category', 'error');
+      return false;
+    }
+  };
+
   return {
     // raw state + setters (used by AppProvider for fetchData + derived state)
     transactions, setTransactions,
@@ -194,11 +223,13 @@ export const useDataSlice = ({ showToast }) => {
     groups,       setGroups,
     budgets,      setBudgets,
     activeGroupId, setActiveGroupId,
+    customCategories, setCustomCategories,
     clearAll,
     // public CRUD
     addTransaction, updateTransaction, deleteTransaction,
     createGroup, switchGroup, renameGroup, leaveGroup,
     addFamilyMember, removeFamilyMember,
     updateBudgets,
+    addCustomCategory, deleteCustomCategory,
   };
 };

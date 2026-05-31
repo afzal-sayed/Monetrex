@@ -210,3 +210,19 @@ export const CATEGORY_EMOJI = {
   'Refund':           '↩️',
   'Other Income':     '💰',
 };
+
+export const mergeCategories = (customCats = [], type = 'expense') => {
+  const base   = type === 'income' ? INCOME_CATEGORIES : CATEGORIES;
+  const colors = { ...CATEGORY_COLORS };
+  const emojis = { ...CATEGORY_EMOJI };
+
+  const customNames = customCats
+    .filter((c) => c.type === type || c.type === 'both')
+    .map((c) => {
+      colors[c.name] = c.color;
+      emojis[c.name] = c.emoji;
+      return c.name;
+    });
+
+  return { list: [...base, ...customNames], colors, emojis };
+};

@@ -22,7 +22,7 @@ const TIP = ({ active, payload, label }) => {
 };
 
 export const Analytics = () => {
-  const { transactions, isLoading, theme } = useAppContext();
+  const { transactions, isLoading, theme, customCategories } = useAppContext();
   const [range, setRange] = useState(6); // months to show
 
   const tickColor = theme === 'dark' ? '#94a3b8' : '#64748b';
@@ -46,14 +46,16 @@ export const Analytics = () => {
 
   // ── Category breakdown ────────────────────────────────────────────────
   const categoryData = useMemo(() => {
+    const customColorMap = {};
+    (customCategories || []).forEach((c) => { customColorMap[c.name] = c.color; });
     const cats = {};
     transactions.filter((t) => t.amount < 0).forEach((t) => {
       cats[t.category] = (cats[t.category] || 0) + Math.abs(t.amount);
     });
     return Object.entries(cats)
       .sort((a, b) => b[1] - a[1])
-      .map(([name, value]) => ({ name, value, fill: CATEGORY_COLORS[name] || '#6366F1' }));
-  }, [transactions]);
+      .map(([name, value]) => ({ name, value, fill: CATEGORY_COLORS[name] || customColorMap[name] || '#6366F1' }));
+  }, [transactions, customCategories]);
 
   // ── Monthly savings (income - expenses) ──────────────────────────────
   const savingsData = useMemo(
