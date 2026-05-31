@@ -47,6 +47,8 @@ const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
 /* eslint-enable no-undef */
 
 const app = express();
+// Required for express-rate-limit behind Vercel's proxy (multiple X-Forwarded-For headers)
+app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(cookieParser());
