@@ -4,8 +4,8 @@ import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Toggle } from '../ui/Toggle';
 import { useAppContext } from '../../context/useAppContext';
-import { IndianRupee, Tag, FileText, Loader2, Users, CalendarDays, StickyNote, RefreshCw } from 'lucide-react';
-import { CATEGORIES, INCOME_CATEGORIES } from '../../utils/helpers';
+import { IndianRupee, Tag, FileText, Loader2, Users, CalendarDays, StickyNote, RefreshCw, X } from 'lucide-react';
+import { mergeCategories } from '../../utils/helpers';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -20,15 +20,20 @@ const emptyForm = (family, incomeType = false) => ({
 });
 
 export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
-  const { addTransaction, updateTransaction, family } = useAppContext();
+  const { addTransaction, updateTransaction, family, customCategories, addCustomCategory } = useAppContext();
   const [form,    setForm]    = useState(() => emptyForm(family));
   const [type,    setType]    = useState('expense');
   const [loading, setLoading] = useState(false);
   const [errors,  setErrors]  = useState({});
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [customInput,     setCustomInput]     = useState('');
+  const [addingCustom,    setAddingCustom]    = useState(false);
 
   // Populate form when editing
   useEffect(() => {
     if (!isOpen) return;
+    setShowCustomInput(false);
+    setCustomInput('');
     if (initialData) {
       const txnType = initialData.amount < 0 ? 'expense' : 'income';
       setForm({
@@ -85,6 +90,19 @@ export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
       onClose();
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAddCustom = async () => {
+    const name = customInput.trim();
+    if (!name) return;
+    setAddingCustom(true);
+    const cat = await addCustomCategory(name, type);
+    setAddingCustom(false);
+    if (cat) {
+      set('category', cat.name);
+      setShowCustomInput(false);
+      setCustomInput('');
     }
   };
 
@@ -157,7 +175,7 @@ export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
             <Tag size={14} /> Category
           </label>
           <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1 scrollbar-thin">
-            {(type === 'income' ? INCOME_CATEGORIES : CATEGORIES).map((cat) => (
+            {mergeCategories(customCategories, type).list.map((cat) => (
               <button
                 key={cat}
                 type="button"
@@ -171,7 +189,43 @@ export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
                 {cat}
               </button>
             ))}
+            {!showCustomInput && (
+              <button
+                type="button"
+                onClick={() => setShowCustomInput(true)}
+                className="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap border border-dashed border-slate-300 dark:border-white/20 text-slate-400 hover:text-primary hover:border-primary/50"
+              >
+                + Custom
+              </button>
+            )}
           </div>
+          {showCustomInput && (
+            <div className="flex gap-2 items-center mt-1">
+              <input
+                autoFocus
+                type="text"
+                maxLength={50}
+                placeholder="New category name…"
+                value={customInput}
+                onChange={(e) => setCustomInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { e.preventDefault(); handleAddCustom(); }
+                  if (e.key === 'Escape') { setShowCustomInput(false); setCustomInput(''); }
+                }}
+                className="flex-1 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/40 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <Button type="button" variant="glass" size="sm" onClick={handleAddCustom} disabled={addingCustom}>
+                {addingCustom ? <Loader2 size={12} className="animate-spin" /> : 'Add'}
+              </Button>
+              <button
+                type="button"
+                onClick={() => { setShowCustomInput(false); setCustomInput(''); }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Member selector */}

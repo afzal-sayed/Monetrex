@@ -2,6 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Git Workflow (Required Before Any Task)
+
+Before starting ANY feature, fix, or change:
+1. Switch to master: `git checkout master`
+2. Pull latest: `git pull origin master`
+3. Create a relevant branch: `git checkout -b feat/<name>` or `fix/<name>` or `chore/<name>`
+4. Do all work on the branch — never commit directly to master
+5. If multiple independent features/fixes are needed, create one branch per feature
+
+This rule applies to every session, even for small changes.
+
 ## Commands
 
 ```bash

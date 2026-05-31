@@ -56,7 +56,11 @@ router.get('/', authenticate, async (req, res) => {
       [groupIds]
     );
 
-    res.json({ groups, memberships, transactions, budgets });
+    const customCategories = await query(
+      'SELECT * FROM custom_categories WHERE user_id = $1 ORDER BY created_at ASC',
+      [req.userId]
+    );
+    res.json({ groups, memberships, transactions, budgets, customCategories });
   } catch (e) {
     console.error('Data fetch error:', e);
     res.status(500).json({ error: 'Failed to load data' });

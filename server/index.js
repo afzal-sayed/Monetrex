@@ -10,6 +10,7 @@ import dataRoutes        from './routes/data.js';
 import groupRoutes       from './routes/groups.js';
 import transactionRoutes from './routes/transactions.js';
 import budgetRoutes      from './routes/budgets.js';
+import categoryRoutes    from './routes/categories.js';
 
 /* eslint-disable no-undef */
 const PORT       = process.env.PORT || 3001;
@@ -66,6 +67,7 @@ app.use('/api/data',         dataRoutes);
 app.use('/api/groups',       groupRoutes);
 app.use('/api',              transactionRoutes);
 app.use('/api/groups',       budgetRoutes);
+app.use('/api/me/categories', categoryRoutes);
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {

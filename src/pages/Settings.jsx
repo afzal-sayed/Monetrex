@@ -5,8 +5,8 @@ import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { useAppContext } from '../context/useAppContext';
-import { Sun, Moon, Lock, Target, IndianRupee, Loader2, X, Plus } from 'lucide-react';
-import { CATEGORIES, CATEGORY_COLORS } from '../utils/helpers';
+import { Sun, Moon, Lock, Target, IndianRupee, Loader2, X, Plus, Tag } from 'lucide-react';
+import { mergeCategories } from '../utils/helpers';
 
 // ─── Password Change Section ────────────────────────────────────────────────
 const PasswordSection = () => {
@@ -63,7 +63,7 @@ const PasswordSection = () => {
 
 // ─── Budget Goals Section ───────────────────────────────────────────────────
 const BudgetSection = () => {
-  const { budgets, updateBudgets, isAdmin, activeGroupId, currentMonth } = useAppContext();
+  const { budgets, updateBudgets, isAdmin, activeGroupId, currentMonth, customCategories } = useAppContext();
 
   // rows = [{ cat, amt }] — only categories that have a budget
   const [rows,   setRows]   = useState(() =>
@@ -75,6 +75,7 @@ const BudgetSection = () => {
 
   // Re-init rows only when the active group or month changes (not on background budget re-fetches),
   // so in-progress edits are not wiped by background data syncs.
+  const { list: allExpenseCategories, colors: allColors } = mergeCategories(customCategories, 'expense');
   const budgetKey    = `${activeGroupId}-${currentMonth}`;
   const budgetKeyRef = React.useRef(budgetKey);
   React.useEffect(() => {
@@ -85,7 +86,7 @@ const BudgetSection = () => {
   }, [budgetKey, budgets]);
 
   const usedCats   = new Set(rows.map((r) => r.cat));
-  const availCats  = CATEGORIES.filter((c) => !usedCats.has(c));
+  const availCats  = allExpenseCategories.filter((c) => !usedCats.has(c));
 
   const removeRow  = (cat) => setRows((prev) => prev.filter((r) => r.cat !== cat));
   const updateAmt  = (cat, val) => setRows((prev) => prev.map((r) => r.cat === cat ? { ...r, amt: val } : r));
@@ -98,9 +99,8 @@ const BudgetSection = () => {
 
   const handleSave = async () => {
     setSaving(true);
-    // Send full CATEGORIES payload — 0 for absent ones (backend deletes those)
     const payload = {};
-    CATEGORIES.forEach((c) => {
+    allExpenseCategories.forEach((c) => {
       const found = rows.find((r) => r.cat === c);
       payload[c] = found ? (parseFloat(found.amt) || 0) : 0;
     });
@@ -123,7 +123,7 @@ const BudgetSection = () => {
           {rows.map(({ cat, amt }) => (
             <div key={cat} className="flex items-center gap-3">
               <div className="flex items-center gap-2 w-24 sm:w-36 shrink-0">
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat] || '#6366F1' }} />
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: allColors[cat] || '#6366F1' }} />
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">{cat}</span>
               </div>
               <Input
@@ -174,6 +174,79 @@ const BudgetSection = () => {
       <Button variant="primary" onClick={handleSave} disabled={saving} className="gap-2">
         {saving ? <><Loader2 size={15} className="animate-spin" /> Saving…</> : 'Save Budget Goals'}
       </Button>
+    </div>
+  );
+};
+
+// ─── Custom Categories Section ──────────────────────────────────────────────
+const CustomCategoriesSection = () => {
+  const { customCategories, addCustomCategory, deleteCustomCategory } = useAppContext();
+  const [input,   setInput]   = useState('');
+  const [adding,  setAdding]  = useState(false);
+  const [confirm, setConfirm] = useState(null);
+
+  const handleAdd = async () => {
+    const name = input.trim();
+    if (!name) return;
+    setAdding(true);
+    await addCustomCategory(name, 'expense');
+    setAdding(false);
+    setInput('');
+  };
+
+  const handleDelete = (cat) => {
+    setConfirm({
+      title:        `Delete "${cat.name}"?`,
+      message:      'Existing transactions keep the category name, but it will no longer appear in pickers.',
+      confirmLabel: 'Delete',
+      danger:       true,
+      onConfirm:    async () => { await deleteCustomCategory(cat.id, cat.name); setConfirm(null); },
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-slate-500 dark:text-slate-400">
+        Add your own expense categories. They appear alongside the defaults in transaction and budget pickers.
+      </p>
+      {customCategories.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {customCategories.map((cat) => (
+            <div
+              key={cat.id}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
+              style={{ backgroundColor: cat.color + '22', color: cat.color, border: `1px solid ${cat.color}44` }}
+            >
+              <span>{cat.emoji}</span>
+              <span>{cat.name}</span>
+              <button
+                onClick={() => handleDelete(cat)}
+                className="ml-1 opacity-60 hover:opacity-100 transition-opacity"
+                aria-label={`Delete ${cat.name}`}
+              >
+                <X size={11} />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-slate-400 py-1">No custom categories yet.</p>
+      )}
+      <div className="flex gap-3 items-center pt-2 border-t border-slate-200/60 dark:border-white/[0.06]">
+        <input
+          type="text"
+          maxLength={50}
+          placeholder="New category name…"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+          className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/40 text-sm text-slate-700 dark:text-slate-200 outline-none focus:ring-1 focus:ring-primary"
+        />
+        <Button variant="glass" onClick={handleAdd} disabled={adding} className="gap-1.5 shrink-0">
+          {adding ? <Loader2 size={14} className="animate-spin" /> : <><Plus size={14} /> Add</>}
+        </Button>
+      </div>
+      <ConfirmModal state={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 };
@@ -267,6 +340,20 @@ export const Settings = () => {
         </CardHeader>
         <CardContent>
           <BudgetSection />
+        </CardContent>
+      </Card>
+
+      {/* Custom Categories */}
+      <Card glass>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Tag size={18} className="text-primary" />
+            <CardTitle className="text-slate-900 dark:text-white text-xl">Custom Categories</CardTitle>
+          </div>
+          <CardDescription>Personalize your expense categories.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <CustomCategoriesSection />
         </CardContent>
       </Card>
 

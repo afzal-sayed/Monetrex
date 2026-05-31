@@ -20,7 +20,19 @@ const SortIcon = ({ field, sortBy, dir }) => {
 };
 
 export const Transactions = () => {
-  const { transactions, family, isLoading, deleteTransaction, showToast, isAdmin } = useAppContext();
+  const { transactions, family, isLoading, deleteTransaction, showToast, isAdmin, customCategories } = useAppContext();
+
+  const categoryColors = useMemo(() => {
+    const map = { ...CATEGORY_COLORS };
+    (customCategories || []).forEach((c) => { map[c.name] = c.color; });
+    return map;
+  }, [customCategories]);
+
+  const categoryEmojis = useMemo(() => {
+    const map = { ...CATEGORY_EMOJI };
+    (customCategories || []).forEach((c) => { map[c.name] = c.emoji; });
+    return map;
+  }, [customCategories]);
 
   const [searchTerm,     setSearchTerm]     = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
@@ -271,7 +283,7 @@ export const Transactions = () => {
                   }`}
                   style={
                     categoryFilter === cat && cat !== 'All'
-                      ? { backgroundColor: CATEGORY_COLORS[cat] || '#4F46E5' }
+                      ? { backgroundColor: categoryColors[cat] || '#4F46E5' }
                       : categoryFilter === cat
                       ? { backgroundColor: '#4F46E5' }
                       : {}
@@ -345,9 +357,9 @@ export const Transactions = () => {
                           <div className="flex items-center gap-2.5">
                             <div
                               className="w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0"
-                              style={{ backgroundColor: `${CATEGORY_COLORS[txn.category] || '#6366F1'}18` }}
+                              style={{ backgroundColor: `${categoryColors[txn.category] || '#6366F1'}18` }}
                             >
-                              {txn.amount > 0 ? '💰' : CATEGORY_EMOJI[txn.category] || '💳'}
+                              {txn.amount > 0 ? '💰' : categoryEmojis[txn.category] || '💳'}
                             </div>
                             <div className="min-w-0">
                               <p className="font-medium text-slate-900 dark:text-white text-sm truncate max-w-[180px]">{txn.title}</p>
@@ -362,8 +374,8 @@ export const Transactions = () => {
                           <span
                             className="px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap"
                             style={{
-                              backgroundColor: `${CATEGORY_COLORS[txn.category] || '#6366F1'}18`,
-                              color: CATEGORY_COLORS[txn.category] || '#6366F1',
+                              backgroundColor: `${categoryColors[txn.category] || '#6366F1'}18`,
+                              color: categoryColors[txn.category] || '#6366F1',
                             }}
                           >
                             {txn.category}
@@ -420,9 +432,9 @@ export const Transactions = () => {
                     {/* Icon */}
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center text-base shrink-0"
-                      style={{ backgroundColor: `${CATEGORY_COLORS[txn.category] || '#6366F1'}18` }}
+                      style={{ backgroundColor: `${categoryColors[txn.category] || '#6366F1'}18` }}
                     >
-                      {txn.amount > 0 ? '💰' : CATEGORY_EMOJI[txn.category] || '💳'}
+                      {txn.amount > 0 ? '💰' : categoryEmojis[txn.category] || '💳'}
                     </div>
 
                     {/* Main info */}
@@ -435,8 +447,8 @@ export const Transactions = () => {
                         <span
                           className="text-xs font-semibold px-1.5 py-0.5 rounded-md"
                           style={{
-                            backgroundColor: `${CATEGORY_COLORS[txn.category] || '#6366F1'}18`,
-                            color: CATEGORY_COLORS[txn.category] || '#6366F1',
+                            backgroundColor: `${categoryColors[txn.category] || '#6366F1'}18`,
+                            color: categoryColors[txn.category] || '#6366F1',
                           }}
                         >
                           {txn.category}
