@@ -40,7 +40,9 @@ Both processes must be running for the app to work. The frontend proxies `/api` 
 - Auth: bcrypt password hashing, JWT tokens (7d expiry). Token stored client-side as `monetrex_token` in localStorage, sent as `Authorization: Bearer <token>` header.
 - Key endpoint: `GET /api/data` returns groups + memberships + transactions + budgets for the authenticated user in a single request.
 
-**Tables:** `users`, `groups_tbl`, `memberships`, `transactions`, `budgets`, `revoked_tokens`, `password_reset_tokens`
+**Tables:** `users`, `groups_tbl`, `memberships`, `transactions`, `budgets`, `revoked_tokens`, `password_reset_tokens`, `custom_categories`
+
+All tables are auto-created on startup via `runSchema()` in `server/database.js` — no manual SQL needed for new deployments.
 
 ### Vercel Serverless Wiring
 
