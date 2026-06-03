@@ -99,12 +99,21 @@ const BudgetSection = () => {
 
   const handleSave = async () => {
     setSaving(true);
+    // Merge any unsaved form entry into rows before building payload
+    const effectiveRows = [...rows];
+    if (addCat && addAmt && parseFloat(addAmt) > 0) {
+      const existing = effectiveRows.findIndex((r) => r.cat === addCat);
+      if (existing >= 0) effectiveRows[existing] = { cat: addCat, amt: addAmt };
+      else effectiveRows.push({ cat: addCat, amt: addAmt });
+    }
     const payload = {};
     allExpenseCategories.forEach((c) => {
-      const found = rows.find((r) => r.cat === c);
+      const found = effectiveRows.find((r) => r.cat === c);
       payload[c] = found ? (parseFloat(found.amt) || 0) : 0;
     });
     await updateBudgets(payload, currentMonth);
+    setAddCat('');
+    setAddAmt('');
     setSaving(false);
   };
 
