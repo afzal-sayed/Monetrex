@@ -8,10 +8,13 @@ Before starting ANY feature, fix, or change:
 1. Switch to master: `git checkout master`
 2. Pull latest: `git pull origin master`
 3. Create a relevant branch: `git checkout -b feat/<name>` or `fix/<name>` or `chore/<name>`
-4. Do all work on the branch — never commit directly to master
-5. If multiple independent features/fixes are needed, create one branch per feature
+4. Do all work on the branch — **never commit or push directly to master**
+5. Push the branch and open a PR — master is only updated via merged PRs
+6. If multiple independent features/fixes are needed, create one branch per feature
 
-This rule applies to every session, even for small changes.
+**Supabase:** If a change adds or alters a DB table, update Supabase via the MCP `execute_sql` tool (or note that `runSchema()` will auto-create new tables on next cold start).
+
+This rule applies to every session, even for small hotfixes.
 
 ## Commands
 
