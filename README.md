@@ -113,7 +113,21 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   expires_at TEXT NOT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS custom_categories (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  color TEXT,
+  emoji TEXT,
+  type TEXT DEFAULT 'expense',
+  created_at TEXT DEFAULT to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+  UNIQUE(user_id, name),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 ```
+
+> **Note:** You only need to run this SQL manually if you prefer to pre-create tables. The server auto-creates all tables on startup via `runSchema()` in `server/database.js` — so for a fresh deployment, tables are created automatically on first request.
 
 </details>
 
