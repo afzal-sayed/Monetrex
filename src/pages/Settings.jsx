@@ -63,7 +63,7 @@ const PasswordSection = () => {
 
 // ─── Budget Goals Section ───────────────────────────────────────────────────
 const BudgetSection = () => {
-  const { budgets, updateBudgets, isAdmin, activeGroupId, currentMonth, customCategories } = useAppContext();
+  const { budgets, updateBudgets, fetchData, isAdmin, activeGroupId, currentMonth, customCategories } = useAppContext();
 
   // rows = [{ cat, amt }] — only categories that have a budget
   const [rows,   setRows]   = useState(() =>
@@ -111,7 +111,13 @@ const BudgetSection = () => {
       const found = effectiveRows.find((r) => r.cat === c);
       payload[c] = found ? (parseFloat(found.amt) || 0) : 0;
     });
-    await updateBudgets(payload, currentMonth);
+    const ok = await updateBudgets(payload, currentMonth);
+    if (ok) {
+      // Sync rows immediately so the list reflects what was saved
+      setRows(effectiveRows.filter((r) => parseFloat(r.amt) > 0));
+      // Refresh global state so Budgets page updates without reload
+      fetchData();
+    }
     setAddCat('');
     setAddAmt('');
     setSaving(false);
