@@ -22,6 +22,8 @@ npm run build        # Production build to /dist
 npm run lint         # ESLint across .js and .jsx files
 npm run preview      # Preview production build
 npm run server       # Start only the backend (node server/index.js)
+npm run db:backup    # Dump + encrypt Supabase DB to backups/ (requires BACKUP_ENCRYPTION_KEY in .env)
+npm run db:decrypt   # Decrypt a backup file
 ```
 
 Both processes must be running for the app to work. The frontend proxies `/api` → `http://localhost:3001` via Vite in dev.
@@ -69,6 +71,7 @@ All tables are auto-created on startup via `runSchema()` in `server/database.js`
   ├── /dashboard    → Dashboard.jsx
   ├── /transactions → Transactions.jsx
   ├── /analytics    → Analytics.jsx
+  ├── /budgets      → Budgets.jsx
   ├── /family       → Family.jsx
   └── /settings     → Settings.jsx
 ```
@@ -94,6 +97,8 @@ Background: `.grid-bg` CSS class applies a subtle dot-grid pattern.
 - Role hierarchy: `Owner` > `Admin` > `Member`. Admins see all transactions; members see only their own.
 - `memberships.user_name` (joined from `users`) is the display name; falls back to `memberships.name`.
 - Category budgets are per-group, stored in the `budgets` table with `UNIQUE(group_id, category, month)` constraint.
+- Cross-page scroll: use `<Link to="/page" state={{ scrollTo: 'section-id' }}>` and in the target page add `useLocation` + `useEffect` to `getElementById('section-id').scrollIntoView()`. Currently wired: Dashboard → Settings#budget-goals, Budgets → Settings#budget-goals.
+- `Button` variants: `primary` (gradient purple), `secondary` (emerald), `glass` (translucent), `ghost` (text-only). No `outline` variant — using an undefined variant silently renders unstyled.
 
 ## Deployment
 
@@ -132,36 +137,16 @@ Run once in Supabase SQL Editor to create all tables (see README.md for the full
 
 A pre-built knowledge graph of this codebase lives in `graphify-out/`. **Before reading source files to answer architecture or tracing questions, query the graph first.**
 
-- `graphify-out/graph.json` — full graph (172 nodes, 174 edges, 33 communities)
+- `graphify-out/graph.json` — full graph (202 nodes, 138 edges, 97 communities)
 - `graphify-out/GRAPH_REPORT.md` — community map, god nodes, surprising connections
 - `graphify-out/graph.html` — interactive visualization (open in browser)
 
 ### Key god nodes (highest connectivity — start here for broad questions)
-- `useAppContext()` — 15 edges, bridges all pages, auth, modals, and data utilities
-- `useDataSlice` — 11 edges, owns all group/transaction/budget CRUD actions
-- `Frontend Helpers (helpers.js)` — 6 edges, shared formatting and compute utilities
-- `ErrorBoundary` — 5 edges, wraps all protected routes
+- `Architecture Overview` — 8 edges, entry point for stack-level questions (React 19 + Vite + Express + Supabase + Vercel)
+- `DB Backup Design Spec` / `DB Backup Implementation Plan` — 7–8 edges, covers backup strategy, encryption, restore flow
+- `Set Budget Limit Modal` — 8 edges, bridges Budgets page, AppContext, Modal component, and Settings scroll flow
+- `helpers.js` — 5 edges, shared formatting and compute utilities
 
 ### How to use it
-
-**For "where is X?" or "how does X work?" questions**, load `graph.json` and BFS from the matching node:
-
-```bash
-python3 -c "
-import json
-from networkx.readwrite import json_graph
-import networkx as nx
-from pathlib import Path
-
-G = json_graph.node_link_graph(json.loads(Path('graphify-out/graph.json').read_text()), edges='links')
-term = 'TERM'  # replace with concept to look up
-matches = sorted(G.nodes(data=True), key=lambda x: sum(1 for w in term.lower().split() if w in x[1].get('label','').lower()), reverse=True)
-start = matches[0][0]
-neighbors = list(nx.bfs_tree(G, start, depth_limit=2).nodes())
-for n in neighbors:
-    d = G.nodes[n]
-    print(d.get('label', n), '->', d.get('source_file',''))
-"
-```
 
 **Run `/graphify query "<question>"` to traverse the graph** for any architecture question before reading source files directly. Update the graph after significant code changes with `/graphify . --update`.
