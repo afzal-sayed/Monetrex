@@ -290,7 +290,11 @@ export const Dashboard = () => {
             </Card>
 
             <Card glass>
-              <CardHeader><CardTitle className="text-slate-900 dark:text-white text-base">Monthly Budget</CardTitle></CardHeader>
+              <CardHeader>
+                <Link to="/budgets" className="hover:opacity-80 transition-opacity">
+                  <CardTitle className="text-slate-900 dark:text-white text-base">Monthly Budget</CardTitle>
+                </Link>
+              </CardHeader>
               <CardContent className="space-y-4">
                 {budgetProgress.total > 0 ? (
                   <>
@@ -352,7 +356,17 @@ export const Dashboard = () => {
                 ) : (
                   <div className="space-y-3">
                     <p className="text-sm text-slate-400">No budget set yet.</p>
-                    <p className="text-xs text-slate-500">Go to <strong className="text-primary">Settings → Budget Goals</strong> to set monthly limits.</p>
+                    <p className="text-xs text-slate-500">
+                      Go to{' '}
+                      <Link
+                        to="/settings"
+                        state={{ scrollTo: 'budget-goals' }}
+                        className="text-primary font-semibold hover:underline"
+                      >
+                        Settings → Budget Goals
+                      </Link>{' '}
+                      to set monthly limits.
+                    </p>
                   </div>
                 )}
               </CardContent>

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
 import { Toggle } from '../components/ui/Toggle';
 import { Input } from '../components/ui/Input';
@@ -269,6 +270,14 @@ const CustomCategoriesSection = () => {
 // ─── Main Settings Page ─────────────────────────────────────────────────────
 export const Settings = () => {
   const { theme, toggleTheme, user, updateUser, deleteAccount, showToast } = useAppContext();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.scrollTo === 'budget-goals') {
+      const el = document.getElementById('budget-goals');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
 
   const [notifications, setNotifications] = useState(user?.notifications ?? true);
   const [weeklyReport,  setWeeklyReport]  = useState(user?.weekly_report  ?? false);
@@ -345,7 +354,7 @@ export const Settings = () => {
       </Card>
 
       {/* Budget Goals */}
-      <Card glass>
+      <Card glass id="budget-goals">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Target size={18} className="text-primary" />
