@@ -95,9 +95,10 @@ export const Dashboard = () => {
     return { spent: thisMonthSpend, total: totalBudget };
   }, [transactions, budgets]);
 
-  const budgetPct = budgetProgress.total > 0
-    ? Math.min((budgetProgress.spent / budgetProgress.total) * 100, 100)
+  const budgetPct    = budgetProgress.total > 0
+    ? (budgetProgress.spent / budgetProgress.total) * 100
     : 0;
+  const budgetPctBar = Math.min(budgetPct, 100);
 
   const recentTxns = transactions.slice(0, 6);
   const recurringCount = transactions.filter((t) => t.is_recurring).length;
@@ -314,7 +315,7 @@ export const Dashboard = () => {
                             : budgetPct > 70 ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)]'
                             : 'bg-gradient-to-r from-secondary to-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.4)]'
                           }`}
-                          style={{ width: `${budgetPct}%` }}
+                          style={{ width: `${budgetPctBar}%` }}
                         />
                       </div>
                       <p className="text-xs text-slate-400 mt-2">

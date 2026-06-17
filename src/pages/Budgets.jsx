@@ -1,7 +1,9 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Target, Settings2, TrendingUp, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, ChevronDown, CalendarDays } from 'lucide-react';
+import { Target, Settings2, TrendingUp, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, ChevronDown, CalendarDays, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Modal } from '../components/ui/Modal';
+import { Button } from '../components/ui/Button';
 import { useAppContext } from '../context/useAppContext';
 import { CATEGORY_EMOJI, CATEGORY_COLORS } from '../utils/helpers';
 
@@ -34,12 +36,16 @@ const buildMonthList = (anchor, count = 12) => {
 export const Budgets = () => {
   const {
     transactions, budgetsRaw, activeGroupId, currentMonth, isLoading,
+    updateBudgets, isAdmin,
   } = useAppContext();
 
   const months = useMemo(() => buildMonthList(currentMonth, 12), [currentMonth]);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [pickerOpen,    setPickerOpen]    = useState(false);
   const pickerRef = useRef(null);
+  const [editingCat, setEditingCat] = useState(null);
+  const [editAmt,    setEditAmt]    = useState('');
+  const [saving,     setSaving]     = useState(false);
 
   const isCurrentMonth = selectedMonth === currentMonth;
   const currentIdx     = months.indexOf(selectedMonth);
@@ -99,6 +105,15 @@ export const Budgets = () => {
   const totalSpent    = budgetItems.reduce((s, i) => s + i.spent,  0);
   const overallPct    = totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0;
   const overallStatus = overallPct > 90 ? (overallPct > 100 ? 'over' : 'critical') : overallPct > 70 ? 'warning' : 'safe';
+
+  const handleSetBudget = async (category) => {
+    const amount = parseFloat(editAmt);
+    if (!amount || amount <= 0) return;
+    setSaving(true);
+    const ok = await updateBudgets({ ...monthBudgets, [category]: amount }, selectedMonth);
+    if (ok) { setEditingCat(null); setEditAmt(''); }
+    setSaving(false);
+  };
 
   if (isLoading) {
     return (
@@ -368,9 +383,75 @@ export const Budgets = () => {
                     <p className="text-xs text-slate-500 dark:text-slate-400">{fmt(spent)} spent</p>
                   </div>
                   <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[category] || '#94A3B8' }} />
+                  {isAdmin && (
+                    <button
+                      onClick={() => { setEditingCat(category); setEditAmt(''); }}
+                      className="ml-1 flex items-center gap-1 text-xs text-primary hover:underline shrink-0 cursor-pointer"
+                      title="Set budget limit"
+                    >
+                      <Plus size={13} /> Set limit
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
+
+            {/* Set Budget Modal */}
+            <Modal
+              isOpen={!!editingCat}
+              onClose={() => { setEditingCat(null); setEditAmt(''); }}
+              title="Set Budget Limit"
+            >
+              {editingCat && (
+                <div className="space-y-5">
+                  {/* Category preview */}
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-100 dark:bg-white/[0.06]">
+                    <span className="text-2xl leading-none">{CATEGORY_EMOJI[editingCat] || '📦'}</span>
+                    <div>
+                      <p className="font-semibold text-slate-800 dark:text-white">{editingCat}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {fmt(unbudgetedCategories.find(([c]) => c === editingCat)?.[1] || 0)} spent this month
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Amount input */}
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Monthly limit (₹)</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">₹</span>
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="e.g. 5000"
+                        value={editAmt}
+                        onChange={(e) => setEditAmt(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSetBudget(editingCat)}
+                        className="w-full pl-7 pr-3 py-2.5 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-3 pt-1">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => { setEditingCat(null); setEditAmt(''); }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      className="flex-1"
+                      disabled={saving || !editAmt || parseFloat(editAmt) <= 0}
+                      onClick={() => handleSetBudget(editingCat)}
+                    >
+                      {saving ? 'Saving…' : 'Save Budget'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </Modal>
           </CardContent>
         </Card>
       )}
