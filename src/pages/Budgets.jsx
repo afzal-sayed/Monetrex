@@ -121,6 +121,7 @@ export const Budgets = () => {
         </div>
         <Link
           to="/settings"
+          state={{ scrollTo: 'budget-goals' }}
           className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-primary transition-colors shrink-0 mt-1"
         >
           <Settings2 size={14} />
