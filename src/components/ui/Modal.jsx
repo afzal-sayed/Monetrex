@@ -86,7 +86,7 @@ export const Modal = ({ isOpen, onClose, title, children, className }) => {
               <X size={18} />
             </button>
           </div>
-          <div className="overflow-y-auto min-h-0">{children}</div>
+          <div className="overflow-y-auto overflow-x-hidden min-h-0">{children}</div>
         </div>
       </div>
     </div>,
