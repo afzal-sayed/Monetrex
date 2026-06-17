@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "server": "node --env-file=.env server/index.js",
     "start": "node server/index.js",
-    "db:backup": "bash scripts/backup-db.sh"
+    "db:backup": "bash scripts/backup-db.sh",
+    "db:decrypt": "bash scripts/decrypt-backup.sh"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
