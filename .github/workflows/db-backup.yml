@@ -42,7 +42,7 @@ jobs:
       - name: Switch to or create db-backups branch
         run: |
           if git ls-remote --exit-code --heads origin db-backups > /dev/null 2>&1; then
-            git checkout db-backups
+            git checkout --track origin/db-backups
           else
             git checkout --orphan db-backups
             git rm -rf . > /dev/null 2>&1 || true
