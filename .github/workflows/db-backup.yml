@@ -1,0 +1,80 @@
+name: Database Backup
+
+on:
+  schedule:
+    - cron: '0 0 * * *'   # midnight UTC daily
+  workflow_dispatch:         # manual trigger from Actions UI
+
+permissions:
+  contents: write
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout master (for backup script)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install postgresql-client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+
+      - name: Run backup to /tmp
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+          BACKUP_OUTPUT_DIR: /tmp/db-backup
+        run: bash scripts/backup-db.sh
+
+      - name: Configure git
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+      - name: Switch to or create db-backups branch
+        run: |
+          if git ls-remote --exit-code --heads origin db-backups > /dev/null 2>&1; then
+            git checkout db-backups
+          else
+            git checkout --orphan db-backups
+            git rm -rf . > /dev/null 2>&1 || true
+            echo "# Database Backups" > README.md
+            echo "" >> README.md
+            echo "Encrypted PostgreSQL dumps. One file per day, 14-day retention." >> README.md
+            echo "Never merge this branch into master." >> README.md
+            git add README.md
+            git commit -m "chore: initialize db-backups branch"
+          fi
+
+      - name: Copy backup file into branch
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          cp "/tmp/db-backup/backup-${DATE}.sql.gz.enc" .
+
+      - name: Delete backups older than 14 days
+        run: |
+          CUTOFF=$(date -d "14 days ago" +%Y-%m-%d)
+          for f in backup-*.sql.gz.enc; do
+            [ -f "$f" ] || continue
+            FDATE="${f#backup-}"
+            FDATE="${FDATE%.sql.gz.enc}"
+            if [[ "$FDATE" < "$CUTOFF" ]]; then
+              echo "Removing old backup: $f (date: $FDATE, cutoff: $CUTOFF)"
+              git rm "$f"
+            fi
+          done
+
+      - name: Commit and push
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          git add "backup-${DATE}.sql.gz.enc"
+          git status
+          if git diff --staged --quiet; then
+            echo "Backup for today already exists — nothing to commit."
+          else
+            git commit -m "backup: ${DATE}"
+            git push origin db-backups
+          fi
