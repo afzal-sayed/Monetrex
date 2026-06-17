@@ -272,7 +272,7 @@ export const Budgets = () => {
               {isCurrentMonth ? (
                 <>
                   Set monthly spending limits in{' '}
-                  <Link to="/settings" className="text-primary hover:underline font-medium">
+                  <Link to="/settings" state={{ scrollTo: 'budget-goals' }} className="text-primary hover:underline font-medium">
                     Settings → Budget Goals
                   </Link>
                   .
