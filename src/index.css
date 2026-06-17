@@ -293,3 +293,11 @@ body {
   background: rgba(79, 70, 229, 0.25);
   color: inherit;
 }
+
+/* ===== iOS Safari: prevent auto-zoom on input focus ===== */
+/* iOS zooms when focused element font-size < 16px; this targets iOS only */
+@supports (-webkit-touch-callout: none) {
+  input, select, textarea {
+    font-size: 16px;
+  }
+}
