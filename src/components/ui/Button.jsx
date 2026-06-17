@@ -6,7 +6,7 @@ export const Button = React.forwardRef(({ className, variant = 'primary', size =
     <button
       ref={ref}
       className={cn(
-        "inline-flex items-center justify-center rounded-xl font-medium transition-all duration-300 ease-out focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-95",
+        "inline-flex items-center justify-center rounded-xl font-medium transition-all duration-300 ease-out focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-95 cursor-pointer",
         
         {
           /* Primary: Gradient background with inner glow and outer hover glow */
