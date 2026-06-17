@@ -435,7 +435,7 @@ export const Budgets = () => {
                   {/* Actions */}
                   <div className="flex gap-3 pt-1">
                     <Button
-                      variant="outline"
+                      variant="glass"
                       className="flex-1"
                       onClick={() => { setEditingCat(null); setEditAmt(''); }}
                     >
