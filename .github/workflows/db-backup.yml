@@ -29,6 +29,11 @@ jobs:
           BACKUP_OUTPUT_DIR: /tmp/db-backup
         run: bash scripts/backup-db.sh
 
+      - name: Export DATE to environment
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          echo "DATE=$DATE" >> $GITHUB_ENV
+
       - name: Configure git
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -47,11 +52,11 @@ jobs:
             echo "Never merge this branch into master." >> README.md
             git add README.md
             git commit -m "chore: initialize db-backups branch"
+            git push origin db-backups
           fi
 
       - name: Copy backup file into branch
         run: |
-          DATE=$(date +%Y-%m-%d)
           cp "/tmp/db-backup/backup-${DATE}.sql.gz.enc" .
 
       - name: Delete backups older than 14 days
@@ -69,9 +74,7 @@ jobs:
 
       - name: Commit and push
         run: |
-          DATE=$(date +%Y-%m-%d)
           git add "backup-${DATE}.sql.gz.enc"
-          git status
           if git diff --staged --quiet; then
             echo "Backup for today already exists — nothing to commit."
           else
