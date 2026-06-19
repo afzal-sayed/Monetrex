@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import { useAppContext } from '../context/useAppContext';
 import { computeMonthlyData, CATEGORY_COLORS } from '../utils/helpers';
+import SpendingTimelineChart from '../components/charts/SpendingTimelineChart';
 
 const TIP = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -246,6 +247,12 @@ export const Analytics = () => {
                 )}
               </CardContent>
             </Card>
+          </div>
+
+          {/* Spending Timeline */}
+          <div>
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-3">Spending Timeline</h3>
+            <SpendingTimelineChart />
           </div>
         </>
       )}
