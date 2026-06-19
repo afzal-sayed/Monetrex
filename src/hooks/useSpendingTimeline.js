@@ -121,13 +121,14 @@ export function useSpendingTimeline(transactions, { range = 'month', granularity
       if (idx !== -1) buckets[idx].spend += Math.abs(t.amount);
     });
 
-    let running = 0;
-    buckets = buckets.map((b) => {
-      running += b.spend;
-      return { ...b, cumulative: running };
-    });
-
-    const totalSpend = running;
+    const { result: finalBuckets, total: totalSpend } = buckets.reduce(
+      (acc, b) => {
+        const cumulative = acc.total + b.spend;
+        return { result: [...acc.result, { ...b, cumulative }], total: cumulative };
+      },
+      { result: [], total: 0 }
+    );
+    buckets = finalBuckets;
     const periodLabel = getPeriodLabel(range, start, end);
 
     const today = new Date();
