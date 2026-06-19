@@ -6,6 +6,8 @@ import {
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppContext } from '../../context/useAppContext';
 import { useSpendingTimeline } from '../../hooks/useSpendingTimeline';
+import { formatRupee } from '../../utils/helpers';
+import { SpendingTimelineTip } from './SpendingTimelineTip';
 
 const RANGES = [
   { key: 'week',   label: 'Week' },
@@ -18,27 +20,6 @@ const GRANULARITIES = [
   { key: 'day',  label: 'Day' },
   { key: 'week', label: 'Week' },
 ];
-
-function formatRupee(v) {
-  if (v >= 100000) return `₹${(v / 100000).toFixed(1)}L`;
-  if (v >= 1000)   return `₹${(v / 1000).toFixed(1)}K`;
-  return `₹${v.toLocaleString('en-IN')}`;
-}
-
-const TipContent = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-slate-900/95 border border-white/10 rounded-xl px-4 py-3 shadow-2xl text-sm">
-      <p className="text-slate-400 text-xs mb-2">{label}</p>
-      {payload.map((p) => (
-        <p key={p.dataKey} className="font-medium" style={{ color: p.color }}>
-          {p.dataKey === 'spend' ? 'Spent' : 'Cumulative'}:{' '}
-          ₹{Number(p.value).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-        </p>
-      ))}
-    </div>
-  );
-};
 
 export default function SpendingTimelineChart() {
   const { transactions } = useAppContext();
@@ -149,7 +130,7 @@ export default function SpendingTimelineChart() {
                 width={55}
                 dx={-4}
               />
-              <Tooltip content={<TipContent />} cursor={{ fill: 'rgba(148,163,184,0.06)' }} />
+              <Tooltip content={<SpendingTimelineTip />} cursor={{ fill: 'rgba(148,163,184,0.06)' }} />
               <Legend
                 wrapperStyle={{ fontSize: 11, color: '#94a3b8', paddingTop: 8 }}
                 formatter={(v) => (v === 'spend' ? (granularity === 'day' ? 'Daily Spend' : 'Weekly Spend') : 'Cumulative')}

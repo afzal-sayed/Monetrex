@@ -425,11 +425,9 @@ export const Dashboard = () => {
       </div>
 
       {/* Spending Timeline Widget */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div>
-          <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-3">Spending Timeline</h3>
-          <SpendingTimelineWidget />
-        </div>
+      <div>
+        <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-3">Spending Timeline</h3>
+        <SpendingTimelineWidget />
       </div>
 
       <AddExpenseModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />

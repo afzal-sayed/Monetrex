@@ -7,27 +7,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../../context/useAppContext';
 import { useSpendingTimeline } from '../../hooks/useSpendingTimeline';
-
-function formatRupee(v) {
-  if (v >= 100000) return `₹${(v / 100000).toFixed(1)}L`;
-  if (v >= 1000)   return `₹${(v / 1000).toFixed(1)}K`;
-  return `₹${v.toLocaleString('en-IN')}`;
-}
-
-const TipContent = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-slate-900/95 border border-white/10 rounded-xl px-3 py-2 shadow-2xl text-xs">
-      <p className="text-slate-400 mb-1">{label}</p>
-      {payload.map((p) => (
-        <p key={p.dataKey} style={{ color: p.color }}>
-          {p.dataKey === 'spend' ? 'Spent' : 'Total'}:{' '}
-          ₹{Number(p.value).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-        </p>
-      ))}
-    </div>
-  );
-};
+import { formatRupee } from '../../utils/helpers';
+import { SpendingTimelineTip } from './SpendingTimelineTip';
 
 export default function SpendingTimelineWidget() {
   const { transactions } = useAppContext();
@@ -79,7 +60,7 @@ export default function SpendingTimelineWidget() {
             <ComposedChart data={buckets} margin={{ top: 2, right: 4, left: -28, bottom: 0 }}>
               <XAxis dataKey="label" hide />
               <YAxis hide />
-              <Tooltip content={<TipContent />} cursor={{ fill: 'rgba(148,163,184,0.06)' }} />
+              <Tooltip content={<SpendingTimelineTip cumulativeLabel="Total" />} cursor={{ fill: 'rgba(148,163,184,0.06)' }} />
               <Bar dataKey="spend" name="spend" fill="#6366F1" radius={[3, 3, 0, 0]} maxBarSize={18} fillOpacity={0.85} />
               <Line type="monotone" dataKey="cumulative" name="cumulative" stroke="#F59E0B" strokeWidth={1.5} dot={false} activeDot={{ r: 3, fill: '#F59E0B' }} />
             </ComposedChart>
