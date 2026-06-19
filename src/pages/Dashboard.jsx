@@ -11,6 +11,7 @@ import { useAppContext } from '../context/useAppContext';
 import { AddExpenseModal } from '../components/features/AddExpenseModal';
 import { InsightsPanel } from '../components/features/InsightsPanel';
 import { CATEGORY_COLORS, CATEGORY_EMOJI, formatDate } from '../utils/helpers';
+import SpendingTimelineWidget from '../components/charts/SpendingTimelineWidget';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -421,6 +422,12 @@ export const Dashboard = () => {
             </div>
           )}
         </Card>
+      </div>
+
+      {/* Spending Timeline Widget */}
+      <div>
+        <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-3">Spending Timeline</h3>
+        <SpendingTimelineWidget />
       </div>
 
       <AddExpenseModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />

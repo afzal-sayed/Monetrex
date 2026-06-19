@@ -211,6 +211,12 @@ export const CATEGORY_EMOJI = {
   'Other Income':     '💰',
 };
 
+export function formatRupee(v) {
+  if (v >= 100000) return `₹${(v / 100000).toFixed(1)}L`;
+  if (v >= 1000)   return `₹${(v / 1000).toFixed(1)}K`;
+  return `₹${v.toLocaleString('en-IN')}`;
+}
+
 export const mergeCategories = (customCats = [], type = 'expense') => {
   const base   = type === 'income' ? INCOME_CATEGORIES : CATEGORIES;
   const colors = { ...CATEGORY_COLORS };
