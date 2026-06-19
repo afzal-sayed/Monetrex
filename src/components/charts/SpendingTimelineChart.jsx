@@ -94,7 +94,7 @@ export default function SpendingTimelineChart() {
             <button
               key={r.key}
               onClick={() => handleRangeChange(r.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all min-h-[36px] ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all min-h-[44px] ${
                 range === r.key
                   ? 'bg-primary text-white shadow-md'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -109,7 +109,7 @@ export default function SpendingTimelineChart() {
             <button
               key={g.key}
               onClick={() => setGranularity(g.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all min-h-[36px] ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all min-h-[44px] ${
                 granularity === g.key
                   ? 'bg-primary text-white shadow-md'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -123,7 +123,7 @@ export default function SpendingTimelineChart() {
 
       {/* Chart */}
       {buckets.length === 0 || totalSpend === 0 ? (
-        <div className="flex items-center justify-center h-[280px] text-slate-400 text-sm">
+        <div className="flex items-center justify-center h-[220px] sm:h-[280px] text-slate-400 text-sm">
           No expenses in this period
         </div>
       ) : (
@@ -152,7 +152,7 @@ export default function SpendingTimelineChart() {
               <Tooltip content={<TipContent />} cursor={{ fill: 'rgba(148,163,184,0.06)' }} />
               <Legend
                 wrapperStyle={{ fontSize: 11, color: '#94a3b8', paddingTop: 8 }}
-                formatter={(v) => (v === 'spend' ? 'Daily Spend' : 'Cumulative')}
+                formatter={(v) => (v === 'spend' ? (granularity === 'day' ? 'Daily Spend' : 'Weekly Spend') : 'Cumulative')}
               />
               <Bar dataKey="spend" name="spend" fill="#6366F1" radius={[4, 4, 0, 0]} maxBarSize={32} fillOpacity={0.85} />
               <Line type="monotone" dataKey="cumulative" name="cumulative" stroke="#F59E0B" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#F59E0B' }} />
