@@ -107,8 +107,8 @@ router.patch('/transactions/:id', authenticate, async (req, res) => {
 router.delete('/transactions/bulk', authenticate, async (req, res) => {
   try {
     const { ids } = req.body;
-    if (!Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ error: 'ids must be a non-empty array' });
+    if (!Array.isArray(ids) || ids.length === 0 || ids.length > 500) {
+      return res.status(400).json({ error: 'ids must be a non-empty array of at most 500 items' });
     }
 
     const rows = await query(
@@ -139,7 +139,7 @@ router.delete('/transactions/bulk', authenticate, async (req, res) => {
       })
       .map((r) => r.id);
 
-    if (allowedIds.length === 0) return res.status(403).json({ error: 'Forbidden' });
+    if (allowedIds.length === 0) return res.json({ deleted: 0 });
 
     await run(`DELETE FROM transactions WHERE id = ANY($1)`, [allowedIds]);
     res.json({ deleted: allowedIds.length });
