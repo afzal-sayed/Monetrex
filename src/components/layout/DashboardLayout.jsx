@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
+import { MobileFAB } from './MobileFAB';
 import { Outlet } from 'react-router-dom';
 
 export const DashboardLayout = () => (
@@ -12,5 +13,6 @@ export const DashboardLayout = () => (
       </div>
     </main>
     <MobileNav />
+    <MobileFAB />
   </div>
 );
