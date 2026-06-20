@@ -103,6 +103,52 @@ router.patch('/transactions/:id', authenticate, async (req, res) => {
   }
 });
 
+// Bulk delete — body: { ids: ['id1', 'id2', ...] }
+router.delete('/transactions/bulk', authenticate, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'ids must be a non-empty array' });
+    }
+
+    const rows = await query(
+      `SELECT t.id, t.group_id, t.member_id
+       FROM transactions t
+       WHERE t.id = ANY($1)`,
+      [ids]
+    );
+    if (rows.length === 0) return res.json({ deleted: 0 });
+
+    const groupIds = [...new Set(rows.map((r) => r.group_id))];
+
+    const memberships = await query(
+      `SELECT group_id, role, id as member_id FROM memberships WHERE user_id = $1 AND group_id = ANY($2)`,
+      [req.userId, groupIds]
+    );
+    const roleMap = {};
+    const userMemberIds = new Set();
+    memberships.forEach((m) => {
+      roleMap[m.group_id] = m.role;
+      userMemberIds.add(m.member_id);
+    });
+
+    const allowedIds = rows
+      .filter((r) => {
+        const role = roleMap[r.group_id];
+        return role === 'Owner' || role === 'Admin' || userMemberIds.has(r.member_id);
+      })
+      .map((r) => r.id);
+
+    if (allowedIds.length === 0) return res.status(403).json({ error: 'Forbidden' });
+
+    await run(`DELETE FROM transactions WHERE id = ANY($1)`, [allowedIds]);
+    res.json({ deleted: allowedIds.length });
+  } catch (e) {
+    console.error('Bulk delete transaction error:', e);
+    res.status(500).json({ error: 'Failed to bulk delete transactions' });
+  }
+});
+
 router.delete('/transactions/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
