@@ -244,14 +244,21 @@ export function computeCategoryMonthlyData(transactions, months = 6) {
     });
   }
 
-  // Find top 6 categories by total spend across the window
+  const monthKeySet = new Set(keys.map((k) => k.key));
+
+  // Single pass: bucket expenses by month+category
+  const bucket = {};
   const totals = {};
   transactions.forEach((t) => {
     if (t.amount >= 0) return;
     const monthKey = t.date?.slice(0, 7);
-    if (!keys.find((k) => k.key === monthKey)) return;
-    totals[t.category] = (totals[t.category] || 0) + Math.abs(t.amount);
+    if (!monthKeySet.has(monthKey)) return;
+    const amt = Math.abs(t.amount);
+    totals[t.category] = (totals[t.category] || 0) + amt;
+    if (!bucket[monthKey]) bucket[monthKey] = {};
+    bucket[monthKey][t.category] = (bucket[monthKey][t.category] || 0) + amt;
   });
+
   const topCats = Object.entries(totals)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6)
@@ -260,9 +267,7 @@ export function computeCategoryMonthlyData(transactions, months = 6) {
   return keys.map(({ key, name }) => {
     const row = { name, key };
     topCats.forEach((cat) => {
-      row[cat] = transactions
-        .filter((t) => t.amount < 0 && t.category === cat && t.date?.slice(0, 7) === key)
-        .reduce((s, t) => s + Math.abs(t.amount), 0);
+      row[cat] = bucket[key]?.[cat] || 0;
     });
     return row;
   });
