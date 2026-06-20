@@ -6,6 +6,7 @@ import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 import { useAppContext } from '../context/useAppContext';
 import { CATEGORY_EMOJI, CATEGORY_COLORS } from '../utils/helpers';
+import BudgetVsActualChart from '../components/charts/BudgetVsActualChart';
 
 const STATUS_COLORS = {
   safe:     { bar: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
@@ -360,6 +361,12 @@ export const Budgets = () => {
           })}
         </div>
       )}
+
+      {/* Budget vs Actual */}
+      <div>
+        <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-3">Budget vs Actual — This Month</h3>
+        <BudgetVsActualChart selectedMonth={selectedMonth} />
+      </div>
 
       {/* Unbudgeted spending */}
       {unbudgetedCategories.length > 0 && (
