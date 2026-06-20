@@ -232,3 +232,43 @@ export const mergeCategories = (customCats = [], type = 'expense') => {
 
   return { list: [...base, ...customNames], colors, emojis };
 };
+
+export function computeCategoryMonthlyData(transactions, months = 6) {
+  const now = new Date();
+  const keys = [];
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    keys.push({
+      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      name: d.toLocaleString('en-US', { month: 'short' }),
+    });
+  }
+
+  const monthKeySet = new Set(keys.map((k) => k.key));
+
+  // Single pass: bucket expenses by month+category
+  const bucket = {};
+  const totals = {};
+  transactions.forEach((t) => {
+    if (t.amount >= 0) return;
+    const monthKey = t.date?.slice(0, 7);
+    if (!monthKeySet.has(monthKey)) return;
+    const amt = Math.abs(t.amount);
+    totals[t.category] = (totals[t.category] || 0) + amt;
+    if (!bucket[monthKey]) bucket[monthKey] = {};
+    bucket[monthKey][t.category] = (bucket[monthKey][t.category] || 0) + amt;
+  });
+
+  const topCats = Object.entries(totals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([cat]) => cat);
+
+  return keys.map(({ key, name }) => {
+    const row = { name, key };
+    topCats.forEach((cat) => {
+      row[cat] = bucket[key]?.[cat] || 0;
+    });
+    return row;
+  });
+}
