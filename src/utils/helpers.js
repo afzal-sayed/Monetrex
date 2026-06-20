@@ -232,3 +232,38 @@ export const mergeCategories = (customCats = [], type = 'expense') => {
 
   return { list: [...base, ...customNames], colors, emojis };
 };
+
+export function computeCategoryMonthlyData(transactions, months = 6) {
+  const now = new Date();
+  const keys = [];
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    keys.push({
+      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      name: d.toLocaleString('en-US', { month: 'short' }),
+    });
+  }
+
+  // Find top 6 categories by total spend across the window
+  const totals = {};
+  transactions.forEach((t) => {
+    if (t.amount >= 0) return;
+    const monthKey = t.date?.slice(0, 7);
+    if (!keys.find((k) => k.key === monthKey)) return;
+    totals[t.category] = (totals[t.category] || 0) + Math.abs(t.amount);
+  });
+  const topCats = Object.entries(totals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([cat]) => cat);
+
+  return keys.map(({ key, name }) => {
+    const row = { name, key };
+    topCats.forEach((cat) => {
+      row[cat] = transactions
+        .filter((t) => t.amount < 0 && t.category === cat && t.date?.slice(0, 7) === key)
+        .reduce((s, t) => s + Math.abs(t.amount), 0);
+    });
+    return row;
+  });
+}
