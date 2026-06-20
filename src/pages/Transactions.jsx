@@ -73,6 +73,7 @@ export const Transactions = () => {
     ) {
       prevFilters.current = { searchTerm, categoryFilter, memberFilter, recurringOnly, dateFrom, dateTo, sortBy, sortDir };
       setPage(1);
+      setSelectedIds(new Set());
     }
   }, [searchTerm, categoryFilter, memberFilter, recurringOnly, dateFrom, dateTo, sortBy, sortDir]);
 
@@ -151,10 +152,6 @@ export const Transactions = () => {
   const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
 
   const toggleAll = () => setSelectedIds(allSelected ? new Set() : new Set(allVisibleIds));
-
-  useEffect(() => {
-    setSelectedIds(new Set());
-  }, [searchTerm, categoryFilter, memberFilter, page, dateFrom, dateTo]);
 
   const handleBulkDelete = async () => {
     if (!window.confirm(`Permanently delete ${selectedIds.size} transaction(s)?`)) return;

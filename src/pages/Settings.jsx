@@ -277,7 +277,7 @@ export const Settings = () => {
       const el = document.getElementById('budget-goals');
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, []);
+  }, [location.state]);
 
   const [notifications, setNotifications] = useState(user?.notifications ?? true);
   const [weeklyReport,  setWeeklyReport]  = useState(user?.weekly_report  ?? false);
