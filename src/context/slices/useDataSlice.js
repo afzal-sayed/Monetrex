@@ -70,7 +70,8 @@ export const useDataSlice = ({ showToast }) => {
 
   const deleteTransactions = useCallback(async (ids) => {
     try {
-      await apiFetch('/transactions/bulk', { method: 'DELETE', body: JSON.stringify({ ids }) });
+      const res = await apiFetch('/transactions/bulk', { method: 'DELETE', body: JSON.stringify({ ids }) });
+      if (!res.ok) { showToast('Failed to delete transactions', 'error'); return; }
       setTransactions((prev) => prev.filter((t) => !ids.includes(t.id)));
     } catch {
       showToast('Failed to delete transactions', 'error');
