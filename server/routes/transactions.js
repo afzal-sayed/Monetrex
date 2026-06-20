@@ -59,6 +59,11 @@ router.patch('/transactions/:id', authenticate, async (req, res) => {
     );
     if (!membership) return res.status(403).json({ error: 'Not authorized' });
 
+    const isAdmin = ['Owner', 'Admin'].includes(membership.role);
+    if (!isAdmin && txn.member_id !== membership.membershipid) {
+      return res.status(403).json({ error: 'You can only edit your own transactions' });
+    }
+
     const updates = {};
     const { title, amount, category, note, date, isRecurring, memberId } = req.body;
     if (title !== undefined) {
@@ -70,12 +75,18 @@ router.patch('/transactions/:id', authenticate, async (req, res) => {
       if (!Number.isFinite(parsedAmount)) return res.status(400).json({ error: 'Amount must be a valid number' });
       updates.amount = parsedAmount;
     }
-    if (category    !== undefined) updates.category     = category;
+    if (category !== undefined) {
+      if (typeof category !== 'string' || category.length > 100) return res.status(400).json({ error: 'Category must be 100 characters or fewer' });
+      updates.category = category;
+    }
     if (note !== undefined) {
       if (note && note.length > 500) return res.status(400).json({ error: 'Note must be 500 characters or fewer' });
       updates.note = note?.trim() || '';
     }
-    if (date        !== undefined) updates.date         = date;
+    if (date !== undefined) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'Date must be YYYY-MM-DD' });
+      updates.date = date;
+    }
     if (isRecurring !== undefined) updates.is_recurring = isRecurring ? 1 : 0;
     if (memberId !== undefined) {
       const [memberInGroup] = await query(
@@ -139,7 +150,7 @@ router.delete('/transactions/bulk', authenticate, async (req, res) => {
       })
       .map((r) => r.id);
 
-    if (allowedIds.length === 0) return res.json({ deleted: 0 });
+    if (allowedIds.length === 0) return res.status(403).json({ error: 'Forbidden' });
 
     await run(`DELETE FROM transactions WHERE id = ANY($1)`, [allowedIds]);
     res.json({ deleted: allowedIds.length });

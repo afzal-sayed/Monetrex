@@ -25,6 +25,11 @@ router.patch('/', authenticate, async (req, res) => {
     if (req.body.email           !== undefined) {
       const emailVal = req.body.email.toLowerCase().trim();
       if (!isValidEmail(emailVal)) return res.status(400).json({ error: 'Enter a valid email address' });
+      const [existing] = await query(
+        'SELECT id FROM users WHERE email = $1 AND id != $2',
+        [emailVal, req.userId]
+      );
+      if (existing) return res.status(409).json({ error: 'Email is already in use' });
       updates.email = emailVal;
     }
     if (req.body.notifications   !== undefined) updates.notifications = req.body.notifications ? 1 : 0;
