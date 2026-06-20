@@ -7,14 +7,11 @@ export function useSpendingAlerts() {
   const alertedRef = useRef(new Set());
 
   useEffect(() => {
-    if (!budgets || !activeGroupId) return;
+    // budgets is activeBudgets: already-merged { category: amount } for active group + current month
+    if (!budgets || !activeGroupId || !Object.keys(budgets).length) return;
 
     const thisMonth = new Date().toISOString().slice(0, 7);
-    const groupBudgets = budgets[activeGroupId] ?? {};
-    const monthBudgets = {
-      ...(groupBudgets['default'] ?? {}),
-      ...(groupBudgets[thisMonth] ?? {}),
-    };
+    const monthBudgets = budgets;
 
     Object.entries(monthBudgets).forEach(([category, rawLimit]) => {
       const limit = parseFloat(rawLimit);
