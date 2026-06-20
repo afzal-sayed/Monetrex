@@ -68,6 +68,16 @@ export const useDataSlice = ({ showToast }) => {
     }
   };
 
+  const deleteTransactions = useCallback(async (ids) => {
+    try {
+      const res = await apiFetch('/transactions/bulk', { method: 'DELETE', body: JSON.stringify({ ids }) });
+      if (!res.ok) { showToast('Failed to delete transactions', 'error'); return; }
+      setTransactions((prev) => prev.filter((t) => !ids.includes(t.id)));
+    } catch {
+      showToast('Failed to delete transactions', 'error');
+    }
+  }, [showToast]);
+
   // ── Groups ────────────────────────────────────────────────────────────────
   const createGroup = async (name) => {
     try {
@@ -226,7 +236,7 @@ export const useDataSlice = ({ showToast }) => {
     customCategories, setCustomCategories,
     clearAll,
     // public CRUD
-    addTransaction, updateTransaction, deleteTransaction,
+    addTransaction, updateTransaction, deleteTransaction, deleteTransactions,
     createGroup, switchGroup, renameGroup, leaveGroup,
     addFamilyMember, removeFamilyMember,
     updateBudgets,

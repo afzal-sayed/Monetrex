@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
+import { MobileFAB } from './MobileFAB';
 import { Outlet } from 'react-router-dom';
 import { useSpendingAlerts } from '../../hooks/useSpendingAlerts';
 
@@ -15,6 +16,7 @@ export const DashboardLayout = () => {
         </div>
       </main>
       <MobileNav />
+      <MobileFAB />
     </div>
   );
 };
