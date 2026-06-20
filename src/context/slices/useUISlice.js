@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export const useUISlice = () => {
-  const [theme,     setTheme]     = useState(() => localStorage.getItem('theme') || 'dark');
+  const [theme,     setTheme]     = useState(() => {
+    const stored = localStorage.getItem('theme');
+    if (stored) return stored;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
   const [toasts,    setToasts]    = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -22,6 +26,18 @@ export const useUISlice = () => {
     window.addEventListener('storage', handler);
     return () => window.removeEventListener('storage', handler);
   }, [theme]);
+
+  // Respond to OS theme changes only when user hasn't overridden manually
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e) => {
+      if (!localStorage.getItem('theme')) {
+        setTheme(e.matches ? 'dark' : 'light');
+      }
+    };
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
 
