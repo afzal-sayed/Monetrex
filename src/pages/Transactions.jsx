@@ -152,6 +152,10 @@ export const Transactions = () => {
 
   const toggleAll = () => setSelectedIds(allSelected ? new Set() : new Set(allVisibleIds));
 
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [searchTerm, categoryFilter, memberFilter, page, dateFrom, dateTo]);
+
   const handleBulkDelete = async () => {
     if (!window.confirm(`Permanently delete ${selectedIds.size} transaction(s)?`)) return;
     await deleteTransactions([...selectedIds]);
@@ -331,7 +335,7 @@ export const Transactions = () => {
               <span className="text-sm font-medium text-primary">{selectedIds.size} selected</span>
               <button
                 onClick={handleBulkDelete}
-                className="flex items-center gap-1.5 text-sm font-medium text-red-400 hover:text-red-300 transition-colors min-h-[36px] px-2"
+                className="flex items-center gap-1.5 text-sm font-medium text-red-400 hover:text-red-300 transition-colors min-h-[44px] px-2"
               >
                 <Trash2 size={15} /> Delete selected
               </button>
@@ -392,13 +396,15 @@ export const Transactions = () => {
                         style={{ animationDelay: `${i * 20}ms` }}
                       >
                         <td className="p-4 w-10">
-                          <input
-                            type="checkbox"
-                            checked={selectedIds.has(txn.id)}
-                            onChange={() => toggleSelect(txn.id)}
-                            onClick={(e) => e.stopPropagation()}
-                            className="w-4 h-4 accent-primary cursor-pointer"
-                          />
+                          <label className="flex items-center justify-center min-w-[44px] min-h-[44px] cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(txn.id)}
+                              onChange={() => toggleSelect(txn.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-4 h-4 accent-primary cursor-pointer"
+                            />
+                          </label>
                         </td>
                         <td className="p-4">
                           <div className="flex items-center gap-2.5">
@@ -476,13 +482,15 @@ export const Transactions = () => {
                 const member = family.find((f) => f.id === txn.member_id);
                 return (
                   <div key={txn.id} className="flex items-center gap-3 px-4 py-3.5 w-full min-w-0">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(txn.id)}
-                      onChange={() => toggleSelect(txn.id)}
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-4 h-4 accent-primary cursor-pointer shrink-0"
-                    />
+                    <label className="flex items-center justify-center min-w-[44px] min-h-[44px] cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(txn.id)}
+                        onChange={() => toggleSelect(txn.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 accent-primary cursor-pointer"
+                      />
+                    </label>
                     {/* Icon */}
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center text-base shrink-0"
