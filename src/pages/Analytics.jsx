@@ -7,6 +7,7 @@ import {
 import { useAppContext } from '../context/useAppContext';
 import { computeMonthlyData, CATEGORY_COLORS } from '../utils/helpers';
 import SpendingTimelineChart from '../components/charts/SpendingTimelineChart';
+import CategoryTrendChart from '../components/charts/CategoryTrendChart';
 
 const TIP = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -253,6 +254,12 @@ export const Analytics = () => {
           <div>
             <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-3">Spending Timeline</h3>
             <SpendingTimelineChart />
+          </div>
+
+          {/* Category Trends */}
+          <div>
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-3">Category Trends</h3>
+            <CategoryTrendChart months={range} />
           </div>
         </>
       )}
