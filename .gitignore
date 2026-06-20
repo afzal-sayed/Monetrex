@@ -59,3 +59,16 @@ graphify-out/[0-9][0-9][0-9][0-9]-*.md
 
 # Local DB backup dumps (never commit plaintext or encrypted dumps to master)
 backups/
+
+# Unused deployment configs (Vercel-only deployment)
+fly.toml
+railway.toml
+render.yaml
+Dockerfile
+.dockerignore
+
+# Test screenshots
+test-*.png
+
+# Dev tooling scratch
+.superpowers/

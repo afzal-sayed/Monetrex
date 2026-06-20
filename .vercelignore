@@ -1,1 +1,9 @@
 graphify-out/
+fly.toml
+railway.toml
+render.yaml
+Dockerfile
+.dockerignore
+docs/
+.superpowers/
+db.json
