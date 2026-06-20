@@ -20,7 +20,7 @@ const SortIcon = ({ field, sortBy, dir }) => {
 };
 
 export const Transactions = () => {
-  const { transactions, family, isLoading, deleteTransaction, showToast, isAdmin, customCategories } = useAppContext();
+  const { transactions, family, isLoading, deleteTransaction, deleteTransactions, showToast, isAdmin, customCategories } = useAppContext();
 
   const categoryColors = useMemo(() => {
     const map = { ...CATEGORY_COLORS };
@@ -48,6 +48,7 @@ export const Transactions = () => {
   const [sortDir,        setSortDir]        = useState('desc');
   const [page,           setPage]           = useState(1);
   const [confirmState,   setConfirmState]   = useState(null);
+  const [selectedIds,    setSelectedIds]    = useState(new Set());
   const PER_PAGE = 20;
 
   const exportRef = useRef(null);
@@ -138,6 +139,23 @@ export const Transactions = () => {
       danger: true,
       onConfirm: () => deleteTransaction(txn.id),
     });
+  };
+
+  const toggleSelect = (id) => setSelectedIds((prev) => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
+  const allVisibleIds = paginated.map((t) => t.id);
+  const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
+
+  const toggleAll = () => setSelectedIds(allSelected ? new Set() : new Set(allVisibleIds));
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Permanently delete ${selectedIds.size} transaction(s)?`)) return;
+    await deleteTransactions([...selectedIds]);
+    setSelectedIds(new Set());
   };
 
   const activeFilterCount =
@@ -308,11 +326,31 @@ export const Transactions = () => {
         </div>
 
         <CardContent className="p-0">
+          {selectedIds.size > 0 && (
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200/60 dark:border-white/[0.06] bg-primary/5">
+              <span className="text-sm font-medium text-primary">{selectedIds.size} selected</span>
+              <button
+                onClick={handleBulkDelete}
+                className="flex items-center gap-1.5 text-sm font-medium text-red-400 hover:text-red-300 transition-colors min-h-[36px] px-2"
+              >
+                <Trash2 size={15} /> Delete selected
+              </button>
+            </div>
+          )}
           {/* ── Desktop Table (md+) ── */}
           <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-left min-w-[640px]">
               <thead>
                 <tr className="border-b border-slate-200/60 dark:border-white/[0.06] text-xs text-slate-400 uppercase tracking-wider">
+                  <th className="p-4 w-10">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={toggleAll}
+                      className="w-4 h-4 accent-primary cursor-pointer"
+                      aria-label="Select all"
+                    />
+                  </th>
                   {[
                     { key: 'title',    label: 'Transaction' },
                     { key: 'category', label: 'Category'    },
@@ -338,7 +376,7 @@ export const Transactions = () => {
               <tbody>
                 {paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-12 text-center text-slate-400 text-sm">
+                    <td colSpan={7} className="p-12 text-center text-slate-400 text-sm">
                       {searchTerm || categoryFilter !== 'All' || memberFilter !== 'All'
                         ? 'No matching transactions found.'
                         : 'No transactions yet. Click "Add" to create one.'}
@@ -353,6 +391,15 @@ export const Transactions = () => {
                         className="border-b border-slate-100/50 dark:border-white/[0.04] hover:bg-slate-50/60 dark:hover:bg-white/[0.025] transition-colors group"
                         style={{ animationDelay: `${i * 20}ms` }}
                       >
+                        <td className="p-4 w-10">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(txn.id)}
+                            onChange={() => toggleSelect(txn.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-4 h-4 accent-primary cursor-pointer"
+                          />
+                        </td>
                         <td className="p-4">
                           <div className="flex items-center gap-2.5">
                             <div
@@ -429,6 +476,13 @@ export const Transactions = () => {
                 const member = family.find((f) => f.id === txn.member_id);
                 return (
                   <div key={txn.id} className="flex items-center gap-3 px-4 py-3.5 w-full min-w-0">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(txn.id)}
+                      onChange={() => toggleSelect(txn.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-4 h-4 accent-primary cursor-pointer shrink-0"
+                    />
                     {/* Icon */}
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center text-base shrink-0"

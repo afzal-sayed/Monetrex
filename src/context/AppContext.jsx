@@ -24,7 +24,7 @@ export const AppProvider = ({ children }) => {
     groups, setGroups, budgets, setBudgets,
     activeGroupId, setActiveGroupId, clearAll,
     customCategories, setCustomCategories,
-    addTransaction, updateTransaction, deleteTransaction,
+    addTransaction, updateTransaction, deleteTransaction, deleteTransactions,
     createGroup, switchGroup, renameGroup, leaveGroup: leaveGroupRaw,
     addFamilyMember, removeFamilyMember, updateBudgets,
     addCustomCategory, deleteCustomCategory,
@@ -176,7 +176,7 @@ export const AppProvider = ({ children }) => {
       transactions:      visibleTransactions,
       allTransactions:   transactions,
       addTransaction:    (t) => addTransaction({ ...t, groupId: activeGroupId }),
-      updateTransaction, deleteTransaction,
+      updateTransaction, deleteTransaction, deleteTransactions,
 
       // Budgets
       budgets: activeBudgets, updateBudgets,
