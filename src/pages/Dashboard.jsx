@@ -13,6 +13,24 @@ import { InsightsPanel } from '../components/features/InsightsPanel';
 import { CATEGORY_COLORS, CATEGORY_EMOJI, formatDate } from '../utils/helpers';
 import SpendingTimelineWidget from '../components/charts/SpendingTimelineWidget';
 
+const GroupBadge = ({ groups, activeGroupId, onGroupChange }) => {
+  if (groups.length > 1) {
+    return (
+      <select
+        value={activeGroupId}
+        onChange={(e) => onGroupChange(e.target.value)}
+        className="bg-primary/10 dark:bg-primary/15 border-none text-xs font-bold text-primary rounded-lg px-2 py-1 outline-none cursor-pointer"
+      >
+        {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+      </select>
+    );
+  }
+  if (groups.length === 1) {
+    return <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-lg">{groups[0].name}</span>;
+  }
+  return null;
+};
+
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
@@ -159,17 +177,7 @@ export const Dashboard = () => {
           </h1>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <p className="text-slate-500 dark:text-slate-400 text-sm">Here's your financial snapshot</p>
-            {groups.length > 1 ? (
-              <select
-                value={activeGroupId}
-                onChange={(e) => setActiveGroupId(e.target.value)}
-                className="bg-primary/10 dark:bg-primary/15 border-none text-xs font-bold text-primary rounded-lg px-2 py-1 outline-none cursor-pointer"
-              >
-                {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
-              </select>
-            ) : groups.length === 1 ? (
-              <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-lg">{groups[0].name}</span>
-            ) : null}
+            <GroupBadge groups={groups} activeGroupId={activeGroupId} onGroupChange={setActiveGroupId} />
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">

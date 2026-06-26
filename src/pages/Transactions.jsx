@@ -12,6 +12,12 @@ import { AddExpenseModal } from '../components/features/AddExpenseModal';
 import { exportToCSV, exportToJSON } from '../utils/export';
 import { formatDate, CATEGORY_COLORS, CATEGORY_EMOJI } from '../utils/helpers';
 
+const getAriaSort = (noSort, sortBy, key, sortDir) => {
+  if (noSort) return undefined;
+  if (sortBy !== key) return 'none';
+  return sortDir === 'asc' ? 'ascending' : 'descending';
+};
+
 const SortIcon = ({ field, sortBy, dir }) => {
   if (sortBy !== field) return <ArrowUpDown size={13} className="text-slate-400" />;
   return dir === 'asc'
@@ -361,7 +367,7 @@ export const Transactions = () => {
                   ].map(({ key, label, noSort, right }) => (
                     <th
                       key={key}
-                      aria-sort={noSort ? undefined : sortBy === key ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                      aria-sort={getAriaSort(noSort, sortBy, key, sortDir)}
                       className={`p-4 font-semibold ${noSort ? '' : 'cursor-pointer hover:text-slate-600 dark:hover:text-slate-200 transition-colors'} ${right ? 'text-right' : ''}`}
                       onClick={() => !noSort && handleSort(key)}
                     >

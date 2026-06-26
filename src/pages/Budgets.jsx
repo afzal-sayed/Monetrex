@@ -56,6 +56,7 @@ const BudgetCard = ({ category, budget, spent, pct, status, remaining, budgetTyp
   const StatusIcon = STATUS_ICONS[status];
   const barWidth   = Math.min(pct, 100);
   const isFixed    = budgetType === 'fixed';
+  const barClass   = isFixed ? 'bg-blue-500' : (status !== 'safe' ? colors.bar : '');
 
   return (
     <Card glass className="overflow-hidden">
@@ -94,7 +95,7 @@ const BudgetCard = ({ category, budget, spent, pct, status, remaining, budgetTyp
         <div className="space-y-1">
           <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all duration-700 ${isFixed ? 'bg-blue-500' : status !== 'safe' ? colors.bar : ''}`}
+              className={`h-full rounded-full transition-all duration-700 ${barClass}`}
               style={{ width: `${barWidth}%`, ...((!isFixed && status === 'safe') ? { backgroundColor: barColor } : {}) }}
             />
           </div>

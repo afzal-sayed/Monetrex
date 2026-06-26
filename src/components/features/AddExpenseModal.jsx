@@ -111,7 +111,9 @@ export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
     if (errors[key]) setErrors((e) => { const n = { ...e }; delete n[key]; return n; });
   };
 
-  const title = initialData ? 'Edit Transaction' : type === 'expense' ? 'Add Expense' : 'Add Income';
+  let title = 'Add Income';
+  if (initialData) title = 'Edit Transaction';
+  else if (type === 'expense') title = 'Add Expense';
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>

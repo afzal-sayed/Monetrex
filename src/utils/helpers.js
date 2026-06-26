@@ -50,6 +50,18 @@ export const computeMonthlyData = (transactions, monthsBack = 6) => {
 
 // ─── Spending insights ──────────────────────────────────────────────────────
 
+const getBudgetHealthType = (pct) => {
+  if (pct > 90) return 'warning';
+  if (pct > 70) return 'neutral';
+  return 'positive';
+};
+
+const getSavingsRateType = (rate) => {
+  if (rate >= 20) return 'positive';
+  if (rate >= 0) return 'neutral';
+  return 'warning';
+};
+
 export const computeInsights = (transactions, budgets = {}, budgetTypes = {}) => {
   const insights = [];
   const now = new Date();
@@ -102,7 +114,7 @@ export const computeInsights = (transactions, budgets = {}, budgetTypes = {}) =>
       .reduce((s, t) => s + Math.abs(t.amount), 0);
     const pct = (flexibleSpend / totalBudget) * 100;
     insights.push({
-      type: pct > 90 ? 'warning' : pct > 70 ? 'neutral' : 'positive',
+      type: getBudgetHealthType(pct),
       title: `${pct.toFixed(0)}% of budget used`,
       desc: `₹${Math.max(0, totalBudget - flexibleSpend).toFixed(0)} remaining`,
       icon: 'Target',
@@ -113,7 +125,7 @@ export const computeInsights = (transactions, budgets = {}, budgetTypes = {}) =>
   if (thisIncome > 0) {
     const savingsRate = ((thisIncome - thisSpend) / thisIncome * 100);
     insights.push({
-      type: savingsRate >= 20 ? 'positive' : savingsRate >= 0 ? 'neutral' : 'warning',
+      type: getSavingsRateType(savingsRate),
       title: `${Math.max(0, savingsRate).toFixed(0)}% savings rate`,
       desc: `₹${Math.max(0, thisIncome - thisSpend).toFixed(0)} saved`,
       icon: 'PiggyBank',
