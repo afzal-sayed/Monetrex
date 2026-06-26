@@ -8,6 +8,8 @@ import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { useAppContext } from '../context/useAppContext';
 import { Sun, Moon, Lock, Target, IndianRupee, Loader2, X, Plus, Tag } from 'lucide-react';
 import { mergeCategories } from '../utils/helpers';
+import { PasswordStrength } from '../components/ui/PasswordStrength';
+import { validatePassword } from '../utils/passwordRules';
 
 // ─── Password Change Section ────────────────────────────────────────────────
 const PasswordSection = () => {
@@ -19,7 +21,8 @@ const PasswordSection = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (form.newPass.length < 8) { setError('New password must be at least 8 characters'); return; }
+    const pwErr = validatePassword(form.newPass);
+    if (pwErr) { setError(pwErr); return; }
     if (form.newPass !== form.confirm) { setError('New passwords do not match'); return; }
     setLoading(true);
     const result = await changePassword(form.current, form.newPass);
@@ -44,11 +47,14 @@ const PasswordSection = () => {
           value={form.current} onChange={(e) => setForm({ ...form, current: e.target.value })}
           placeholder="••••••••" required
         />
-        <Input
-          label="New Password" icon={Lock} type="password"
-          value={form.newPass} onChange={(e) => setForm({ ...form, newPass: e.target.value })}
-          placeholder="••••••••" minLength={8} required
-        />
+        <div className="space-y-2">
+          <Input
+            label="New Password" icon={Lock} type="password"
+            value={form.newPass} onChange={(e) => setForm({ ...form, newPass: e.target.value })}
+            placeholder="••••••••" minLength={8} required
+          />
+          <PasswordStrength password={form.newPass} />
+        </div>
         <Input
           label="Confirm New Password" icon={Lock} type="password"
           value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })}
