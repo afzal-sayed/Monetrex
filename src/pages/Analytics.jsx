@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
 import {
   LineChart, Line, AreaChart, Area, BarChart, Bar, Cell,
@@ -12,6 +12,18 @@ import {
 } from '../utils/helpers';
 import SpendingTimelineChart from '../components/charts/SpendingTimelineChart';
 import CategoryTrendChart from '../components/charts/CategoryTrendChart';
+
+const HeatmapTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload;
+  return (
+    <div className="bg-slate-900/95 border border-white/10 rounded-xl px-4 py-3 shadow-2xl">
+      <p className="text-slate-400 text-xs mb-1">{label}</p>
+      <p className="text-sm font-medium text-white">Avg: ₹{d?.avg?.toLocaleString('en-IN')}</p>
+      <p className="text-xs text-slate-400">{d?.count} transactions</p>
+    </div>
+  );
+};
 
 const TIP = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -79,6 +91,11 @@ export const Analytics = () => {
   const memberBreakdownData   = useMemo(() => computeMemberBreakdown(transactions, family),          [transactions, family]);
   const recurringVsDiscData   = useMemo(() => computeRecurringVsDiscretionary(transactions),         [transactions]);
   const hasRecurring = recurringVsDiscData[0].value > 0 || recurringVsDiscData[1].value > 0;
+
+  const legendFormatter = useCallback(
+    (value) => <span style={{ color: tickColor, fontSize: 11 }}>{value}</span>,
+    [tickColor]
+  );
 
   if (isLoading) {
     return (
@@ -299,19 +316,7 @@ export const Analytics = () => {
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148,163,184,0.1)" />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: tickColor, fontSize: 11 }} dy={8} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fill: tickColor, fontSize: 11 }} dx={-8} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} />
-                      <Tooltip
-                        content={({ active, payload, label }) => {
-                          if (!active || !payload?.length) return null;
-                          const d = payload[0]?.payload;
-                          return (
-                            <div className="bg-slate-900/95 border border-white/10 rounded-xl px-4 py-3 shadow-2xl">
-                              <p className="text-slate-400 text-xs mb-1">{label}</p>
-                              <p className="text-sm font-medium text-white">Avg: ₹{d?.avg?.toLocaleString('en-IN')}</p>
-                              <p className="text-xs text-slate-400">{d?.count} transactions</p>
-                            </div>
-                          );
-                        }}
-                      />
+                      <Tooltip content={<HeatmapTooltip />} />
                       <Bar dataKey="avg" name="Avg spend" fill="url(#heatGrad)" radius={[6, 6, 0, 0]} barSize={28} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -336,7 +341,7 @@ export const Analytics = () => {
                         />
                         <Legend
                           iconType="circle"
-                          formatter={(value) => <span style={{ color: tickColor, fontSize: 11 }}>{value}</span>}
+                          formatter={legendFormatter}
                         />
                         <Pie
                           data={recurringVsDiscData}

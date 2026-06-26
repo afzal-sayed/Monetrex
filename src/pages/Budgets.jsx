@@ -21,6 +21,21 @@ const STATUS_ICONS   = { safe: CheckCircle2, warning: TrendingUp, critical: Aler
 
 const fmt = (n) => `₹${Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
+const getBudgetStatus = (budgetType, pct) => {
+  if (budgetType === 'fixed') return 'committed';
+  if (pct > 100) return 'over';
+  if (pct > 90) return 'critical';
+  if (pct > 70) return 'warning';
+  return 'safe';
+};
+
+const getOverallStatus = (pct) => {
+  if (pct > 100) return 'over';
+  if (pct > 90) return 'critical';
+  if (pct > 70) return 'warning';
+  return 'safe';
+};
+
 const toLabel = (ym) => {
   const [y, m] = ym.split('-');
   return new Date(Number(y), Number(m) - 1).toLocaleString('en-IN', { month: 'long', year: 'numeric' });
@@ -180,9 +195,7 @@ export const Budgets = () => {
         const limit      = parseFloat(budget);
         const pct        = limit > 0 ? (spent / limit) * 100 : 0;
         const budgetType = monthBudgetTypes[category] || 'flexible';
-        const status     = budgetType === 'fixed'
-          ? 'committed'
-          : pct > 100 ? 'over' : pct > 90 ? 'critical' : pct > 70 ? 'warning' : 'safe';
+        const status     = getBudgetStatus(budgetType, pct);
         return { category, budget: limit, spent, pct, status, remaining: limit - spent, budgetType };
       }),
     [monthBudgets, monthBudgetTypes, categorySpending]
@@ -202,7 +215,7 @@ export const Budgets = () => {
   const totalBudget     = flexibleItems.reduce((s, i) => s + i.budget, 0);
   const totalSpent      = flexibleItems.reduce((s, i) => s + i.spent,  0);
   const overallPct      = totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0;
-  const overallStatus   = overallPct > 90 ? (overallPct > 100 ? 'over' : 'critical') : overallPct > 70 ? 'warning' : 'safe';
+  const overallStatus   = getOverallStatus(overallPct);
 
   const committedTotal  = committedItems.reduce((s, i) => s + i.budget, 0);
   const committedSpent  = committedItems.reduce((s, i) => s + i.spent,  0);
