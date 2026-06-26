@@ -24,7 +24,7 @@ router.put('/:groupId/budgets', authenticate, async (req, res) => {
 
     for (const [category, amount] of Object.entries(budgets)) {
       const num = parseFloat(amount);
-      if (num > 0) {
+      if (Number.isFinite(num) && num > 0) {
         await run(
           `INSERT INTO budgets (id, group_id, category, month, amount) VALUES ($1, $2, $3, $4, $5)
            ON CONFLICT (group_id, category, month) DO UPDATE SET amount = EXCLUDED.amount`,
