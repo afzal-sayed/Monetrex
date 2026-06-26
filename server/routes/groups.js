@@ -116,12 +116,20 @@ router.post('/:groupId/members', authenticate, async (req, res) => {
     );
     if (alreadyMember) return res.status(409).json({ error: 'This person is already a member' });
 
+    let parsedSpendLimit = null;
+    if (spendLimit !== undefined && spendLimit !== null && spendLimit !== '') {
+      parsedSpendLimit = parseFloat(spendLimit);
+      if (!Number.isFinite(parsedSpendLimit) || parsedSpendLimit <= 0 || parsedSpendLimit > 10_000_000) {
+        return res.status(400).json({ error: 'Spend limit must be a positive number up to 10,000,000' });
+      }
+    }
+
     const [existingUser] = await query('SELECT id FROM users WHERE email = $1', [emailLower]);
     const membershipId   = `m-${genId()}`;
 
     await run(
       'INSERT INTO memberships (id, group_id, user_id, name, email, role, spend_limit) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-      [membershipId, groupId, existingUser?.id || null, name.trim(), emailLower, role, spendLimit || null]
+      [membershipId, groupId, existingUser?.id || null, name.trim(), emailLower, role, parsedSpendLimit]
     );
 
     const [membership] = await query('SELECT * FROM memberships WHERE id = $1', [membershipId]);

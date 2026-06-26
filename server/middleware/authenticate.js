@@ -29,6 +29,7 @@ export const authenticate = async (req, res, next) => {
     }
 
     req.userId = payload.userId;
+    req.jti    = payload.jti;
     next();
   } catch {
     res.status(401).json({ error: 'Invalid or expired token. Please log in again.' });
