@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { query, run } from '../database.js';
-import { safeUser } from '../helpers.js';
+import { safeUser, validatePassword } from '../helpers.js';
 import { authenticate } from '../middleware/authenticate.js';
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
@@ -56,7 +56,8 @@ router.post('/change-password', authenticate, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Both passwords are required' });
-    if (newPassword.length < 12) return res.status(400).json({ error: 'New password must be at least 12 characters' });
+    const pwError = validatePassword(newPassword);
+    if (pwError) return res.status(400).json({ error: `Password requirements not met: ${pwError}` });
 
     const [user] = await query('SELECT password_hash FROM users WHERE id = $1', [req.userId]);
     const valid = await bcrypt.compare(currentPassword, user.password_hash);

@@ -5,7 +5,7 @@ import { randomBytes, createHash } from 'crypto';
 import rateLimit from 'express-rate-limit';
 import { Resend } from 'resend';
 import { query, run } from '../database.js';
-import { genId, genJti, safeUser, createDefaultGroup } from '../helpers.js';
+import { genId, genJti, safeUser, createDefaultGroup, validatePassword } from '../helpers.js';
 
 /* eslint-disable no-undef */
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -50,7 +50,8 @@ router.post('/signup', authLimiter, async (req, res) => {
     if (!email?.trim()) return res.status(400).json({ error: 'Email is required' });
     if (!isValidEmail(email.trim())) return res.status(400).json({ error: 'Enter a valid email address' });
     if (!password) return res.status(400).json({ error: 'Password is required' });
-    if (password.length < 12) return res.status(400).json({ error: 'Password must be at least 12 characters' });
+    const pwError = validatePassword(password);
+    if (pwError) return res.status(400).json({ error: `Password requirements not met: ${pwError}` });
 
     const emailLower = email.toLowerCase().trim();
     const [existing] = await query('SELECT id FROM users WHERE email = $1', [emailLower]);
@@ -161,7 +162,8 @@ router.post('/reset-password', authLimiter, async (req, res) => {
   try {
     const { token, newPassword } = req.body;
     if (!token || !newPassword) return res.status(400).json({ error: 'Token and new password are required' });
-    if (newPassword.length < 12) return res.status(400).json({ error: 'Password must be at least 12 characters' });
+    const pwError = validatePassword(newPassword);
+    if (pwError) return res.status(400).json({ error: `Password requirements not met: ${pwError}` });
 
     const tokenHash = createHash('sha256').update(token).digest('hex');
     const [row] = await query('SELECT * FROM password_reset_tokens WHERE token = $1', [tokenHash]);
