@@ -6,26 +6,8 @@ import { Mail, Lock, Wallet, User as UserIcon, ArrowLeft, Loader2, ShieldCheck, 
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/useAppContext';
 import { apiFetch } from '../utils/api';
-
-const PasswordStrength = ({ password }) => {
-  if (!password) return null;
-  const strong = password.length >= 12;
-  const ok     = password.length >= 8;
-  return (
-    <div className="flex gap-1 -mt-1">
-      {[1, 2, 3].map((i) => (
-        <div
-          key={i}
-          className={`h-1 flex-1 rounded-full transition-colors ${
-            (strong && i <= 3) ? 'bg-emerald-500' :
-            (ok     && i <= 2) ? 'bg-amber-500'   :
-                      i === 1  ? 'bg-red-400'      : 'bg-slate-200 dark:bg-white/10'
-          }`}
-        />
-      ))}
-    </div>
-  );
-};
+import { PasswordStrength } from '../components/ui/PasswordStrength';
+import { validatePassword } from '../utils/passwordRules';
 
 export const Auth = () => {
   const navigate = useNavigate();
@@ -100,7 +82,8 @@ export const Auth = () => {
     // ── Reset password ───────────────────────────────────────────────────
     if (view === 'reset') {
       if (!newPass) { setError('New password is required'); return; }
-      if (newPass.length < 8) { setError('Password must be at least 8 characters'); return; }
+      const resetPwErr = validatePassword(newPass);
+      if (resetPwErr) { setError(resetPwErr); return; }
       setLoading(true);
       try {
         const res  = await apiFetch('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token: resetToken, newPassword: newPass }) });
@@ -120,7 +103,10 @@ export const Auth = () => {
     if (view === 'signup' && !name.trim()) { setError('Please enter your full name'); return; }
     if (!email.trim())    { setError('Email is required');    return; }
     if (!password)        { setError('Password is required'); return; }
-    if (password.length < 8) { setError('Password must be at least 8 characters'); return; }
+    if (view === 'signup') {
+      const signupPwErr = validatePassword(password);
+      if (signupPwErr) { setError(signupPwErr); return; }
+    }
     if (view === 'signup' && password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -253,6 +239,7 @@ export const Auth = () => {
                       autoFocus
                       rightElement={eyeBtn(showNewPass, setShowNewPass, 'new password')}
                     />
+                    <PasswordStrength password={newPass} />
                   </>
                 )}
 

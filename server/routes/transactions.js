@@ -30,6 +30,13 @@ router.post('/groups/:groupId/transactions', authenticate, async (req, res) => {
     );
     if (!memberExists) return res.status(400).json({ error: 'Invalid member for this group' });
 
+    if (category !== undefined && (typeof category !== 'string' || category.length > 100)) {
+      return res.status(400).json({ error: 'Category must be 100 characters or fewer' });
+    }
+    if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ error: 'Date must be YYYY-MM-DD' });
+    }
+
     const id     = `t-${genId()}`;
     const txDate = date || new Date().toISOString().split('T')[0];
 

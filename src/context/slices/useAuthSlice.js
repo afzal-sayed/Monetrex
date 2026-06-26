@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { apiFetch, TOKEN_KEY } from '../../utils/api';
+import { apiFetch } from '../../utils/api';
 
 export const useAuthSlice = ({ showToast, setIsLoading }) => {
   const [user,      setUser]      = useState(null);
@@ -30,7 +30,6 @@ export const useAuthSlice = ({ showToast, setIsLoading }) => {
       const res  = await apiFetch('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
       const data = await res.json();
       if (!res.ok) return { success: false, error: data.error || 'Login failed' };
-      if (data.token) localStorage.setItem(TOKEN_KEY, data.token);
       setUser(data.user);
       showToast(`Welcome back, ${data.user.name}!`);
       return { success: true };
@@ -44,7 +43,6 @@ export const useAuthSlice = ({ showToast, setIsLoading }) => {
       const res  = await apiFetch('/auth/signup', { method: 'POST', body: JSON.stringify({ name, email, password }) });
       const data = await res.json();
       if (!res.ok) return { success: false, error: data.error || 'Signup failed' };
-      if (data.token) localStorage.setItem(TOKEN_KEY, data.token);
       setUser(data.user);
       showToast(`Welcome to Monetrex, ${data.user.name}!`);
       return { success: true };
@@ -72,7 +70,6 @@ export const useAuthSlice = ({ showToast, setIsLoading }) => {
       const res  = await apiFetch('/me/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) });
       const data = await res.json();
       if (!res.ok) return { success: false, error: data.error };
-      showToast('Password changed successfully!');
       return { success: true };
     } catch {
       return { success: false, error: 'Network error' };

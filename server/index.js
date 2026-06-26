@@ -34,10 +34,7 @@ const apiLimiter = rateLimit({
 /* eslint-disable no-undef */
 const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
   getSecret:            () => process.env.CSRF_SECRET,
-  getSessionIdentifier: (req) => {
-    const auth = req.headers.authorization || '';
-    return auth.slice(-16);
-  },
+  getSessionIdentifier: (req) => (req.cookies?.token || '').slice(-16),
   cookieName:    'x-csrf-token',
   cookieOptions: {
     httpOnly: true,
@@ -53,7 +50,20 @@ const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
 const app = express();
 // Required for express-rate-limit behind Vercel's proxy (multiple X-Forwarded-For headers)
 app.set('trust proxy', 1);
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:  ["'self'"],
+      scriptSrc:   ["'self'", ...(IS_PROD ? [] : ["'unsafe-inline'"])],
+      styleSrc:    ["'self'", "'unsafe-inline'"],
+      imgSrc:      ["'self'", 'data:', 'https://api.dicebear.com'],
+      connectSrc:  ["'self'"],
+      fontSrc:     ["'self'"],
+      objectSrc:   ["'none'"],
+      frameSrc:    ["'none'"],
+    },
+  },
+}));
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(cookieParser());
 app.use(express.json());

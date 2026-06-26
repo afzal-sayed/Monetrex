@@ -1,6 +1,6 @@
 import React, { createContext, useEffect, useCallback, useMemo } from 'react';
 import { computeMonthlyData } from '../utils/helpers';
-import { apiFetch, fetchCsrfToken, GROUP_KEY, TOKEN_KEY } from '../utils/api';
+import { apiFetch, fetchCsrfToken, GROUP_KEY } from '../utils/api';
 import { useUISlice }   from './slices/useUISlice';
 import { useAuthSlice } from './slices/useAuthSlice';
 import { useDataSlice } from './slices/useDataSlice';
@@ -134,10 +134,23 @@ export const AppProvider = ({ children }) => {
   );
 
   // ── Cross-cutting auth actions ─────────────────────────────────────────
+  const changePasswordAndRelogin = useCallback(async (currentPassword, newPassword) => {
+    const result = await changePassword(currentPassword, newPassword);
+    if (result.success) {
+      showToast('Password changed — please sign in again', 'info');
+      try { await apiFetch('/auth/logout', { method: 'POST' }); } catch { /* ignore */ }
+      localStorage.removeItem('monetrex_token');
+      localStorage.removeItem(GROUP_KEY);
+      setUser(null);
+      clearAll();
+    }
+    return result;
+  }, [changePassword, showToast, setUser, clearAll]);
+
   const logout = useCallback(async () => {
     // Ask the server to revoke the JTI and clear the HttpOnly cookie
     try { await apiFetch('/auth/logout', { method: 'POST' }); } catch { /* ignore network errors */ }
-    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('monetrex_token');
     localStorage.removeItem(GROUP_KEY);
     setUser(null);
     clearAll();
@@ -168,7 +181,7 @@ export const AppProvider = ({ children }) => {
   return (
     <AppContext.Provider value={{
       // Auth
-      user, authReady, login, signup, logout, updateUser, changePassword, deleteAccount,
+      user, authReady, login, signup, logout, updateUser, changePassword: changePasswordAndRelogin, deleteAccount,
 
       // Theme
       theme, toggleTheme,
