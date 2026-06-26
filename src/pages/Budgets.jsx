@@ -34,6 +34,90 @@ const buildMonthList = (anchor, count = 12) => {
   });
 };
 
+const BudgetCard = ({ category, budget, spent, pct, status, remaining, budgetType, isAdmin, isToggling, onToggleType }) => {
+  const colors     = STATUS_COLORS[status];
+  const emoji      = CATEGORY_EMOJI[category] || '📦';
+  const barColor   = CATEGORY_COLORS[category] || '#6366F1';
+  const StatusIcon = STATUS_ICONS[status];
+  const barWidth   = Math.min(pct, 100);
+  const isFixed    = budgetType === 'fixed';
+
+  return (
+    <Card glass className="overflow-hidden">
+      <CardContent className="p-5 space-y-3">
+        {/* Top row */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xl leading-none">{emoji}</span>
+            <span className="text-sm font-semibold text-slate-800 dark:text-white truncate">{category}</span>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className={`flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${colors.badge}`}>
+              <StatusIcon size={11} />
+              {STATUS_LABELS[status]}
+            </span>
+            {isAdmin && (
+              <button
+                onClick={() => onToggleType(category, budget)}
+                disabled={isToggling}
+                title={isFixed ? 'Mark as flexible' : 'Mark as fixed expense (e.g. rent)'}
+                className={`p-1 rounded-lg transition-all ${
+                  isFixed
+                    ? 'text-blue-500 hover:bg-blue-500/10'
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.07]'
+                }`}
+              >
+                {isToggling ? <Loader2 size={13} className="animate-spin" /> : isFixed ? <Pin size={13} fill="currentColor" /> : <PinOff size={13} />}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="space-y-1">
+          <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-700 ${isFixed ? 'bg-blue-500' : status !== 'safe' ? colors.bar : ''}`}
+              style={{ width: `${barWidth}%`, ...((!isFixed && status === 'safe') ? { backgroundColor: barColor } : {}) }}
+            />
+          </div>
+          <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+            <span>{pct.toFixed(1)}% used</span>
+            <span className={`font-semibold ${isFixed ? 'text-blue-500 dark:text-blue-400' : colors.text}`}>
+              {fmt(spent)} <span className="font-normal">of {fmt(budget)}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Remaining */}
+        <div className="text-xs">
+          {isFixed ? (
+            remaining >= 0 ? (
+              <span className="text-slate-500 dark:text-slate-400">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">{fmt(remaining)}</span> unused
+              </span>
+            ) : (
+              <span className="text-slate-500 dark:text-slate-400">
+                <span className="font-semibold">{fmt(Math.abs(remaining))}</span> above fixed amount
+              </span>
+            )
+          ) : (
+            remaining >= 0 ? (
+              <span className="text-slate-500 dark:text-slate-400">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">{fmt(remaining)}</span> remaining
+              </span>
+            ) : (
+              <span className="text-red-500 dark:text-red-400 font-semibold">
+                {fmt(Math.abs(remaining))} over budget
+              </span>
+            )
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 export const Budgets = () => {
   const {
     transactions, budgetsRaw, budgetTypesRaw, activeGroupId, currentMonth, isLoading,
@@ -154,91 +238,6 @@ export const Budgets = () => {
       </div>
     );
   }
-
-  const BudgetCard = ({ category, budget, spent, pct, status, remaining, budgetType }) => {
-    const colors     = STATUS_COLORS[status];
-    const emoji      = CATEGORY_EMOJI[category] || '📦';
-    const barColor   = CATEGORY_COLORS[category] || '#6366F1';
-    const StatusIcon = STATUS_ICONS[status];
-    const barWidth   = Math.min(pct, 100);
-    const isFixed    = budgetType === 'fixed';
-    const isToggling = togglingCat === category;
-
-    return (
-      <Card glass className="overflow-hidden">
-        <CardContent className="p-5 space-y-3">
-          {/* Top row */}
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-xl leading-none">{emoji}</span>
-              <span className="text-sm font-semibold text-slate-800 dark:text-white truncate">{category}</span>
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className={`flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${colors.badge}`}>
-                <StatusIcon size={11} />
-                {STATUS_LABELS[status]}
-              </span>
-              {isAdmin && (
-                <button
-                  onClick={() => handleToggleType(category, budget)}
-                  disabled={isToggling}
-                  title={isFixed ? 'Mark as flexible' : 'Mark as fixed expense (e.g. rent)'}
-                  className={`p-1 rounded-lg transition-all ${
-                    isFixed
-                      ? 'text-blue-500 hover:bg-blue-500/10'
-                      : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.07]'
-                  }`}
-                >
-                  {isToggling ? <Loader2 size={13} className="animate-spin" /> : isFixed ? <Pin size={13} fill="currentColor" /> : <PinOff size={13} />}
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="space-y-1">
-            <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-700 ${isFixed ? 'bg-blue-500' : status !== 'safe' ? colors.bar : ''}`}
-                style={{ width: `${barWidth}%`, ...((!isFixed && status === 'safe') ? { backgroundColor: barColor } : {}) }}
-              />
-            </div>
-            <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
-              <span>{pct.toFixed(1)}% used</span>
-              <span className={`font-semibold ${isFixed ? 'text-blue-500 dark:text-blue-400' : colors.text}`}>
-                {fmt(spent)} <span className="font-normal">of {fmt(budget)}</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Remaining */}
-          <div className="text-xs">
-            {isFixed ? (
-              remaining >= 0 ? (
-                <span className="text-slate-500 dark:text-slate-400">
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">{fmt(remaining)}</span> unused
-                </span>
-              ) : (
-                <span className="text-slate-500 dark:text-slate-400">
-                  <span className="font-semibold">{fmt(Math.abs(remaining))}</span> above fixed amount
-                </span>
-              )
-            ) : (
-              remaining >= 0 ? (
-                <span className="text-slate-500 dark:text-slate-400">
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">{fmt(remaining)}</span> remaining
-                </span>
-              ) : (
-                <span className="text-red-500 dark:text-red-400 font-semibold">
-                  {fmt(Math.abs(remaining))} over budget
-                </span>
-              )
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -367,7 +366,7 @@ export const Budgets = () => {
             )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {committedItems.map((item) => <BudgetCard key={item.category} {...item} />)}
+            {committedItems.map((item) => <BudgetCard key={item.category} {...item} isAdmin={isAdmin} isToggling={togglingCat === item.category} onToggleType={handleToggleType} />)}
           </div>
         </section>
       )}
@@ -424,7 +423,7 @@ export const Budgets = () => {
           </Card>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {discretionaryItems.map((item) => <BudgetCard key={item.category} {...item} />)}
+            {discretionaryItems.map((item) => <BudgetCard key={item.category} {...item} isAdmin={isAdmin} isToggling={togglingCat === item.category} onToggleType={handleToggleType} />)}
           </div>
         </section>
       )}
