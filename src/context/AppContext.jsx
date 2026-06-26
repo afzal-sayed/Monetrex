@@ -22,6 +22,7 @@ export const AppProvider = ({ children }) => {
   const {
     transactions, setTransactions, family, setFamily,
     groups, setGroups, budgets, setBudgets,
+    budgetTypes, setBudgetTypes,
     activeGroupId, setActiveGroupId, clearAll,
     customCategories, setCustomCategories,
     addTransaction, updateTransaction, deleteTransaction, deleteTransactions,
@@ -51,13 +52,18 @@ export const AppProvider = ({ children }) => {
       setTransactions(d.transactions || []);
 
       const budgetMap = {};
+      const budgetTypesMap = {};
       (d.budgets || []).forEach((b) => {
         if (!budgetMap[b.group_id]) budgetMap[b.group_id] = {};
+        if (!budgetTypesMap[b.group_id]) budgetTypesMap[b.group_id] = {};
         const mKey = b.month || 'default';
         if (!budgetMap[b.group_id][mKey]) budgetMap[b.group_id][mKey] = {};
+        if (!budgetTypesMap[b.group_id][mKey]) budgetTypesMap[b.group_id][mKey] = {};
         budgetMap[b.group_id][mKey][b.category] = b.amount;
+        budgetTypesMap[b.group_id][mKey][b.category] = b.budget_type || 'flexible';
       });
       setBudgets(budgetMap);
+      setBudgetTypes(budgetTypesMap);
       setCustomCategories(d.customCategories || []);
     } catch (e) {
       if (import.meta.env.DEV) console.error('fetchData error:', e);
@@ -65,7 +71,7 @@ export const AppProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [showToast, setIsLoading, setUser, setGroups, setFamily, setTransactions, setBudgets, setCustomCategories, clearAll]);
+  }, [showToast, setIsLoading, setUser, setGroups, setFamily, setTransactions, setBudgets, setBudgetTypes, setCustomCategories, clearAll]);
 
   useEffect(() => {
     if (authReady && user) fetchData();
@@ -116,6 +122,11 @@ export const AppProvider = ({ children }) => {
     const groupBudgets = budgets[activeGroupId] || {};
     return groupBudgets[currentMonth] || groupBudgets['default'] || {};
   }, [budgets, activeGroupId, currentMonth]);
+
+  const activeBudgetTypes = useMemo(() => {
+    const groupTypes = budgetTypes[activeGroupId] || {};
+    return groupTypes[currentMonth] || groupTypes['default'] || {};
+  }, [budgetTypes, activeGroupId, currentMonth]);
 
   const monthlyData = useMemo(
     () => computeMonthlyData(visibleTransactions),
@@ -194,6 +205,8 @@ export const AppProvider = ({ children }) => {
       // Budgets
       budgets: activeBudgets, updateBudgets,
       budgetsRaw: budgets,
+      budgetTypes: activeBudgetTypes,
+      budgetTypesRaw: budgetTypes,
       currentMonth,
 
       // Chart data

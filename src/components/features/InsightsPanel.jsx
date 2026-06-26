@@ -33,8 +33,8 @@ const TYPE_STYLES = {
 };
 
 export const InsightsPanel = () => {
-  const { transactions, budgets } = useAppContext();
-  const insights = computeInsights(transactions, budgets);
+  const { transactions, budgets, budgetTypes } = useAppContext();
+  const insights = computeInsights(transactions, budgets, budgetTypes);
 
   if (insights.length === 0) return null;
 

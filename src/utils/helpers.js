@@ -50,7 +50,7 @@ export const computeMonthlyData = (transactions, monthsBack = 6) => {
 
 // ─── Spending insights ──────────────────────────────────────────────────────
 
-export const computeInsights = (transactions, budgets = {}) => {
+export const computeInsights = (transactions, budgets = {}, budgetTypes = {}) => {
   const insights = [];
   const now = new Date();
   const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -91,14 +91,20 @@ export const computeInsights = (transactions, budgets = {}) => {
     });
   }
 
-  // Budget health
-  const totalBudget = Object.values(budgets).reduce((s, v) => s + (parseFloat(v) || 0), 0);
+  // Budget health — only flexible budgets count toward health score
+  const flexibleBudgetEntries = Object.entries(budgets)
+    .filter(([cat]) => (budgetTypes[cat] || 'flexible') !== 'fixed');
+  const totalBudget = flexibleBudgetEntries.reduce((s, [, v]) => s + (parseFloat(v) || 0), 0);
   if (totalBudget > 0) {
-    const pct = (thisSpend / totalBudget) * 100;
+    const flexibleCats = new Set(flexibleBudgetEntries.map(([cat]) => cat));
+    const flexibleSpend = thisMonthTxns
+      .filter((t) => t.amount < 0 && flexibleCats.has(t.category))
+      .reduce((s, t) => s + Math.abs(t.amount), 0);
+    const pct = (flexibleSpend / totalBudget) * 100;
     insights.push({
       type: pct > 90 ? 'warning' : pct > 70 ? 'neutral' : 'positive',
       title: `${pct.toFixed(0)}% of budget used`,
-      desc: `₹${Math.max(0, totalBudget - thisSpend).toFixed(0)} remaining`,
+      desc: `₹${Math.max(0, totalBudget - flexibleSpend).toFixed(0)} remaining`,
       icon: 'Target',
     });
   }
@@ -232,6 +238,79 @@ export const mergeCategories = (customCats = [], type = 'expense') => {
 
   return { list: [...base, ...customNames], colors, emojis };
 };
+
+// ─── New analytics compute functions ────────────────────────────────────────
+
+export function computeSpendingHeatmap(transactions) {
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const totals = Array(7).fill(0);
+  const counts = Array(7).fill(0);
+  transactions.filter((t) => t.amount < 0).forEach((t) => {
+    const d = new Date(t.date + 'T00:00:00');
+    if (!isNaN(d.getTime())) {
+      const dow = d.getDay();
+      totals[dow] += Math.abs(t.amount);
+      counts[dow]++;
+    }
+  });
+  return days.map((name, i) => ({
+    name,
+    avg: counts[i] > 0 ? Math.round(totals[i] / counts[i]) : 0,
+    total: Math.round(totals[i]),
+    count: counts[i],
+  }));
+}
+
+export function computeYearOverYear(transactions) {
+  const now = new Date();
+  const thisYear = now.getFullYear();
+  const lastYear = thisYear - 1;
+  const months = [];
+  for (let m = 0; m < 12; m++) {
+    const label = new Date(thisYear, m).toLocaleString('en-US', { month: 'short' });
+    const key   = String(m + 1).padStart(2, '0');
+    months.push({ label, key, current: 0, previous: 0 });
+  }
+  transactions.filter((t) => t.amount < 0).forEach((t) => {
+    const d = new Date(t.date + 'T00:00:00');
+    if (isNaN(d.getTime())) return;
+    const year  = d.getFullYear();
+    const mIdx  = d.getMonth();
+    const amt   = Math.abs(t.amount);
+    if (year === thisYear)  months[mIdx].current  += amt;
+    else if (year === lastYear) months[mIdx].previous += amt;
+  });
+  return months.map(({ label, current, previous }) => ({
+    name: label,
+    [thisYear]:  Math.round(current),
+    [lastYear]:  Math.round(previous),
+  }));
+}
+
+export function computeMemberBreakdown(transactions, members) {
+  const totals = {};
+  transactions.filter((t) => t.amount < 0).forEach((t) => {
+    const member = members.find((m) => m.id === t.member_id);
+    const name = member?.user_name || member?.name || 'Unknown';
+    totals[name] = (totals[name] || 0) + Math.abs(t.amount);
+  });
+  return Object.entries(totals)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, value]) => ({ name, value: Math.round(value) }));
+}
+
+export function computeRecurringVsDiscretionary(transactions) {
+  let recurring = 0;
+  let discretionary = 0;
+  transactions.filter((t) => t.amount < 0).forEach((t) => {
+    if (t.is_recurring) recurring += Math.abs(t.amount);
+    else discretionary += Math.abs(t.amount);
+  });
+  return [
+    { name: 'Recurring',     value: Math.round(recurring),     fill: '#7C3AED' },
+    { name: 'Discretionary', value: Math.round(discretionary), fill: '#10B981' },
+  ];
+}
 
 export function computeCategoryMonthlyData(transactions, months = 6) {
   const now = new Date();
