@@ -96,6 +96,19 @@ export const Dashboard = () => {
     return { spent: thisMonthSpend, total: totalBudget };
   }, [transactions, budgets]);
 
+  const perCategoryBars = useMemo(() => {
+    const now = new Date();
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    return Object.entries(budgets)
+      .map(([cat, limit]) => {
+        const spent = transactions
+          .filter((t) => t.category === cat && t.amount < 0 && t.date?.slice(0, 7) === thisMonth)
+          .reduce((s, t) => s + Math.abs(t.amount), 0);
+        return { cat, limit: parseFloat(limit), spent };
+      })
+      .sort((a, b) => b.spent - a.spent);
+  }, [budgets, transactions]);
+
   const budgetPct    = budgetProgress.total > 0
     ? (budgetProgress.spent / budgetProgress.total) * 100
     : 0;
@@ -353,34 +366,22 @@ export const Dashboard = () => {
                     </div>
                     {/* Per-category mini bars — sorted by spent descending */}
                     <div className="space-y-2 max-h-32 overflow-y-auto scrollbar-thin pr-1">
-                      {(() => {
-                        const now = new Date();
-                        const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-                        return Object.entries(budgets)
-                          .map(([cat, limit]) => {
-                            const spent = transactions
-                              .filter((t) => t.category === cat && t.amount < 0 && t.date?.slice(0, 7) === thisMonth)
-                              .reduce((s, t) => s + Math.abs(t.amount), 0);
-                            return { cat, limit: parseFloat(limit), spent };
-                          })
-                          .sort((a, b) => b.spent - a.spent)
-                          .map(({ cat, limit, spent }) => {
-                            const pct = Math.min((spent / limit) * 100, 100);
-                            return (
-                              <div key={cat}>
-                                <div className="flex justify-between text-xs text-slate-400 mb-1">
-                                  <span>{cat}</span><span>{pct.toFixed(0)}%</span>
-                                </div>
-                                <div className="h-1.5 w-full bg-slate-200/60 dark:bg-slate-800 rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full transition-all duration-700"
-                                    style={{ width: `${pct}%`, backgroundColor: CATEGORY_COLORS[cat] || '#6366F1' }}
-                                  />
-                                </div>
-                              </div>
-                            );
-                          });
-                      })()}
+                      {perCategoryBars.map(({ cat, limit, spent }) => {
+                        const pct = Math.min((spent / limit) * 100, 100);
+                        return (
+                          <div key={cat}>
+                            <div className="flex justify-between text-xs text-slate-400 mb-1">
+                              <span>{cat}</span><span>{pct.toFixed(0)}%</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-slate-200/60 dark:bg-slate-800 rounded-full overflow-hidden">
+                              <div
+                                className="h-full rounded-full transition-all duration-700"
+                                style={{ width: `${pct}%`, backgroundColor: CATEGORY_COLORS[cat] || '#6366F1' }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </>
                 ) : (

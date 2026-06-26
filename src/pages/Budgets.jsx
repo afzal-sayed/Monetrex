@@ -67,7 +67,9 @@ const BudgetCard = ({ category, budget, spent, pct, status, remaining, budgetTyp
                     : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.07]'
                 }`}
               >
-                {isToggling ? <Loader2 size={13} className="animate-spin" /> : isFixed ? <Pin size={13} fill="currentColor" /> : <PinOff size={13} />}
+                {isToggling && <Loader2 size={13} className="animate-spin" />}
+                {!isToggling && isFixed && <Pin size={13} fill="currentColor" />}
+                {!isToggling && !isFixed && <PinOff size={13} />}
               </button>
             )}
           </div>
