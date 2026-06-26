@@ -56,7 +56,7 @@ router.post('/change-password', authenticate, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Both passwords are required' });
-    if (newPassword.length < 8) return res.status(400).json({ error: 'New password must be at least 8 characters' });
+    if (newPassword.length < 12) return res.status(400).json({ error: 'New password must be at least 12 characters' });
 
     const [user] = await query('SELECT password_hash FROM users WHERE id = $1', [req.userId]);
     const valid = await bcrypt.compare(currentPassword, user.password_hash);
@@ -64,6 +64,14 @@ router.post('/change-password', authenticate, async (req, res) => {
 
     const newHash = await bcrypt.hash(newPassword, 12);
     await run('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, req.userId]);
+
+    if (req.jti) {
+      await run(
+        'INSERT INTO revoked_tokens (jti, revoked_at) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [req.jti, new Date().toISOString()]
+      );
+    }
+
     res.json({ ok: true });
   } catch (e) {
     console.error('Change password error:', e);
