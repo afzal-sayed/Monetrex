@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   ComposedChart, Bar, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -29,6 +29,11 @@ export default function SpendingTimelineChart() {
 
   const { buckets, totalSpend, periodLabel, canGoBack, canGoForward } =
     useSpendingTimeline(transactions, { range, granularity, periodOffset });
+
+  const legendFormatter = useCallback((v) => {
+    if (v !== 'spend') return 'Cumulative';
+    return granularity === 'day' ? 'Daily Spend' : 'Weekly Spend';
+  }, [granularity]);
 
   function handleRangeChange(r) {
     setRange(r);
@@ -133,7 +138,7 @@ export default function SpendingTimelineChart() {
               <Tooltip content={<SpendingTimelineTip />} cursor={{ fill: 'rgba(148,163,184,0.06)' }} />
               <Legend
                 wrapperStyle={{ fontSize: 11, color: '#94a3b8', paddingTop: 8 }}
-                formatter={(v) => (v === 'spend' ? (granularity === 'day' ? 'Daily Spend' : 'Weekly Spend') : 'Cumulative')}
+                formatter={legendFormatter}
               />
               <Bar dataKey="spend" name="spend" fill="#6366F1" radius={[4, 4, 0, 0]} maxBarSize={32} fillOpacity={0.85} />
               <Line type="monotone" dataKey="cumulative" name="cumulative" stroke="#F59E0B" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#F59E0B' }} />
