@@ -6,6 +6,7 @@ export const useDataSlice = ({ showToast }) => {
   const [family,        setFamily]        = useState([]);
   const [groups,        setGroups]        = useState([]);
   const [budgets,       setBudgets]       = useState({});
+  const [budgetTypes,   setBudgetTypes]   = useState({});
   const [activeGroupId,     setActiveGroupId]     = useState(() => localStorage.getItem(GROUP_KEY) || null);
   const [customCategories,  setCustomCategories]  = useState([]);
 
@@ -20,6 +21,7 @@ export const useDataSlice = ({ showToast }) => {
     setFamily([]);
     setGroups([]);
     setBudgets({});
+    setBudgetTypes({});
     setActiveGroupId(null);
     setCustomCategories([]);
   }, []);
@@ -173,23 +175,28 @@ export const useDataSlice = ({ showToast }) => {
   };
 
   // ── Budgets ───────────────────────────────────────────────────────────────
-  const updateBudgets = async (budgetMap, month = 'default') => {
+  const updateBudgets = async (budgetMap, month = 'default', budgetTypesMap = {}) => {
     if (!activeGroupId) return false;
     try {
       const res  = await apiFetch(`/groups/${activeGroupId}/budgets`, {
         method: 'PUT',
-        body:   JSON.stringify({ budgets: budgetMap, month }),
+        body:   JSON.stringify({ budgets: budgetMap, month, budgetTypes: budgetTypesMap }),
       });
       const data = await res.json();
       if (!res.ok) { showToast(data.error || 'Failed to save budgets', 'error'); return false; }
       const newMap = {};
-      (data.budgets || []).forEach((b) => { newMap[b.category] = b.amount; });
+      const newTypesMap = {};
+      (data.budgets || []).forEach((b) => {
+        newMap[b.category] = b.amount;
+        newTypesMap[b.category] = b.budget_type || 'flexible';
+      });
       setBudgets((prev) => ({
         ...prev,
-        [activeGroupId]: {
-          ...(prev[activeGroupId] || {}),
-          [month]: newMap,
-        },
+        [activeGroupId]: { ...(prev[activeGroupId] || {}), [month]: newMap },
+      }));
+      setBudgetTypes((prev) => ({
+        ...prev,
+        [activeGroupId]: { ...(prev[activeGroupId] || {}), [month]: newTypesMap },
       }));
       showToast('Budgets saved!');
       return true;
@@ -232,6 +239,7 @@ export const useDataSlice = ({ showToast }) => {
     family,       setFamily,
     groups,       setGroups,
     budgets,      setBudgets,
+    budgetTypes,  setBudgetTypes,
     activeGroupId, setActiveGroupId,
     customCategories, setCustomCategories,
     clearAll,

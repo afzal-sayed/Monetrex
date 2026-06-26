@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Plus, ArrowUpRight, ArrowDownRight, TrendingUp, CreditCard, Wallet, Repeat } from 'lucide-react';
+import { Plus, ArrowUpRight, ArrowDownRight, TrendingUp, CreditCard, Wallet, Repeat, AlertTriangle } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
@@ -31,7 +31,7 @@ export const Dashboard = () => {
   const {
     user, transactions, isLoading,
     groups, activeGroupId, setActiveGroupId,
-    budgets, monthlyData,
+    budgets, budgetTypes, monthlyData,
   } = useAppContext();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -103,6 +103,20 @@ export const Dashboard = () => {
 
   const recentTxns = transactions.slice(0, 6);
   const recurringCount = transactions.filter((t) => t.is_recurring).length;
+
+  // Budget alerts — flexible budgets ≥ 90% this month
+  const budgetAlerts = useMemo(() => {
+    const now = new Date();
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const spending = transactions
+      .filter((t) => t.amount < 0 && t.date?.slice(0, 7) === thisMonth)
+      .reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + Math.abs(t.amount); return acc; }, {});
+    return Object.entries(budgets)
+      .filter(([cat, amt]) => parseFloat(amt) > 0 && (budgetTypes?.[cat] || 'flexible') !== 'fixed')
+      .map(([cat, amt]) => ({ cat, pct: ((spending[cat] || 0) / parseFloat(amt)) * 100 }))
+      .filter(({ pct }) => pct >= 90)
+      .sort((a, b) => b.pct - a.pct);
+  }, [budgets, budgetTypes, transactions]);
 
   if (isLoading) {
     return (
@@ -195,6 +209,20 @@ export const Dashboard = () => {
           </Card>
         ))}
       </div>
+
+      {/* Budget alert banner */}
+      {budgetAlerts.length > 0 && (
+        <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 animate-fade-up">
+          <AlertTriangle size={16} className="text-amber-500 shrink-0 mt-0.5" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">Budget Alert</p>
+            <p className="text-xs text-amber-600 dark:text-amber-300 mt-0.5">
+              {budgetAlerts.map((a) => `${a.cat} (${a.pct.toFixed(0)}%)`).join(', ')} {budgetAlerts.length === 1 ? 'is' : 'are'} near or over limit.{' '}
+              <Link to="/budgets" className="underline font-medium">View budgets →</Link>
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Insights Panel */}
       <InsightsPanel />

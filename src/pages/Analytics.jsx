@@ -3,9 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import {
   LineChart, Line, AreaChart, Area, BarChart, Bar, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
+  PieChart, Pie, Legend,
 } from 'recharts';
 import { useAppContext } from '../context/useAppContext';
-import { computeMonthlyData, CATEGORY_COLORS } from '../utils/helpers';
+import {
+  computeMonthlyData, CATEGORY_COLORS,
+  computeSpendingHeatmap, computeYearOverYear, computeMemberBreakdown, computeRecurringVsDiscretionary,
+} from '../utils/helpers';
 import SpendingTimelineChart from '../components/charts/SpendingTimelineChart';
 import CategoryTrendChart from '../components/charts/CategoryTrendChart';
 
@@ -24,7 +28,7 @@ const TIP = ({ active, payload, label }) => {
 };
 
 export const Analytics = () => {
-  const { transactions, isLoading, theme, customCategories } = useAppContext();
+  const { transactions, isLoading, theme, customCategories, family, isAdmin } = useAppContext();
   const [range, setRange] = useState(6); // months to show
 
   const tickColor = theme === 'dark' ? '#94a3b8' : '#64748b';
@@ -64,6 +68,17 @@ export const Analytics = () => {
     () => monthlyData.map((m) => ({ ...m, savings: m.income - m.expenses })),
     [monthlyData]
   );
+
+  // ── New analytics data ────────────────────────────────────────────────
+  const now = new Date();
+  const thisYear = now.getFullYear();
+  const lastYear = thisYear - 1;
+
+  const heatmapData           = useMemo(() => computeSpendingHeatmap(transactions),                  [transactions]);
+  const yoyData               = useMemo(() => computeYearOverYear(transactions),                     [transactions]);
+  const memberBreakdownData   = useMemo(() => computeMemberBreakdown(transactions, family),          [transactions, family]);
+  const recurringVsDiscData   = useMemo(() => computeRecurringVsDiscretionary(transactions),         [transactions]);
+  const hasRecurring = recurringVsDiscData[0].value > 0 || recurringVsDiscData[1].value > 0;
 
   if (isLoading) {
     return (
@@ -261,6 +276,136 @@ export const Analytics = () => {
             <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-3">Category Trends</h3>
             <CategoryTrendChart months={range} />
           </div>
+
+          {/* ── New charts ─────────────────────────────────────────────────── */}
+
+          {/* Spending by Day of Week */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <Card glass>
+              <CardHeader>
+                <CardTitle className="text-slate-900 dark:text-white">Spending by Day of Week</CardTitle>
+                <CardDescription className="text-slate-500 dark:text-slate-400">Average expense per transaction day</CardDescription>
+              </CardHeader>
+              <CardContent className="h-48 sm:h-64">
+                <div role="img" aria-label="Bar chart of average spending by day of week" className="h-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={heatmapData}>
+                      <defs>
+                        <linearGradient id="heatGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%"   stopColor="#4F46E5" stopOpacity={0.9} />
+                          <stop offset="100%" stopColor="#7C3AED" stopOpacity={0.4} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148,163,184,0.1)" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: tickColor, fontSize: 11 }} dy={8} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: tickColor, fontSize: 11 }} dx={-8} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} />
+                      <Tooltip
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload?.length) return null;
+                          const d = payload[0]?.payload;
+                          return (
+                            <div className="bg-slate-900/95 border border-white/10 rounded-xl px-4 py-3 shadow-2xl">
+                              <p className="text-slate-400 text-xs mb-1">{label}</p>
+                              <p className="text-sm font-medium text-white">Avg: ₹{d?.avg?.toLocaleString('en-IN')}</p>
+                              <p className="text-xs text-slate-400">{d?.count} transactions</p>
+                            </div>
+                          );
+                        }}
+                      />
+                      <Bar dataKey="avg" name="Avg spend" fill="url(#heatGrad)" radius={[6, 6, 0, 0]} barSize={28} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recurring vs Discretionary */}
+            <Card glass>
+              <CardHeader>
+                <CardTitle className="text-slate-900 dark:text-white">Recurring vs Discretionary</CardTitle>
+                <CardDescription className="text-slate-500 dark:text-slate-400">Split of recurring vs one-off expenses</CardDescription>
+              </CardHeader>
+              <CardContent className="h-48 sm:h-64">
+                {hasRecurring ? (
+                  <div role="img" aria-label="Pie chart of recurring vs discretionary spending" className="h-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Tooltip
+                          formatter={(v) => [`₹${v.toLocaleString('en-IN')}`, '']}
+                          contentStyle={{ backgroundColor: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: '#fff' }}
+                        />
+                        <Legend
+                          iconType="circle"
+                          formatter={(value) => <span style={{ color: tickColor, fontSize: 11 }}>{value}</span>}
+                        />
+                        <Pie
+                          data={recurringVsDiscData}
+                          innerRadius={50}
+                          outerRadius={70}
+                          paddingAngle={4}
+                          dataKey="value"
+                          strokeWidth={0}
+                        >
+                          {recurringVsDiscData.map((entry, i) => (
+                            <Cell key={i} fill={entry.fill} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-slate-400 text-sm">No expense data yet.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Year-over-Year comparison */}
+          <Card glass>
+            <CardHeader>
+              <CardTitle className="text-slate-900 dark:text-white">Year-over-Year Spending</CardTitle>
+              <CardDescription className="text-slate-500 dark:text-slate-400">{thisYear} vs {lastYear} monthly expenses</CardDescription>
+            </CardHeader>
+            <CardContent className="h-48 sm:h-64">
+              <div role="img" aria-label={`Line chart comparing ${thisYear} and ${lastYear} monthly spending`} className="h-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={yoyData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148,163,184,0.1)" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: tickColor, fontSize: 11 }} dy={8} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: tickColor, fontSize: 11 }} dx={-8} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} />
+                    <Tooltip content={<TIP />} />
+                    <Line type="monotone" dataKey={thisYear} name={`${thisYear}`} stroke="#4F46E5" strokeWidth={2.5} dot={{ r: 4, fill: '#4F46E5', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                    <Line type="monotone" dataKey={lastYear} name={`${lastYear}`} stroke="#94A3B8" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3, fill: '#94A3B8', strokeWidth: 0 }} activeDot={{ r: 5 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Member breakdown (admin only) */}
+          {isAdmin && memberBreakdownData.length > 0 && (
+            <Card glass>
+              <CardHeader>
+                <CardTitle className="text-slate-900 dark:text-white">Member Spending Breakdown</CardTitle>
+                <CardDescription className="text-slate-500 dark:text-slate-400">Total expenses per group member</CardDescription>
+              </CardHeader>
+              <CardContent style={{ height: Math.max(160, memberBreakdownData.length * 44) }}>
+                <div role="img" aria-label="Horizontal bar chart of spending by member" className="h-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={memberBreakdownData} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(148,163,184,0.1)" />
+                      <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: tickColor, fontSize: 11 }} tickFormatter={(v) => `₹${(v/1000).toFixed(1)}k`} />
+                      <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: tickColor, fontSize: 11 }} width={90} />
+                      <Tooltip content={<TIP />} />
+                      <Bar dataKey="value" name="Amount" fill="#4F46E5" radius={[0, 6, 6, 0]} barSize={22} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </>
       )}
     </div>

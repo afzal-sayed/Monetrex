@@ -69,7 +69,17 @@ async function runSchema() {
       category TEXT NOT NULL,
       amount REAL NOT NULL,
       month TEXT NOT NULL DEFAULT 'default',
+      budget_type VARCHAR(10) NOT NULL DEFAULT 'flexible' CHECK (budget_type IN ('flexible', 'fixed')),
       UNIQUE(group_id, category, month)
+    );
+    CREATE TABLE IF NOT EXISTS budget_alerts_sent (
+      id TEXT PRIMARY KEY,
+      group_id TEXT NOT NULL,
+      category TEXT NOT NULL,
+      month TEXT NOT NULL,
+      threshold INTEGER NOT NULL,
+      sent_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(group_id, category, month, threshold)
     );
     CREATE TABLE IF NOT EXISTS revoked_tokens (
       jti TEXT PRIMARY KEY,
@@ -93,6 +103,16 @@ async function runSchema() {
   `);
 }
 
+async function runMigrations() {
+  // Idempotent: adds budget_type to existing deployments that predate it
+  await pool.query(
+    `ALTER TABLE budgets ADD COLUMN IF NOT EXISTS budget_type VARCHAR(10) NOT NULL DEFAULT 'flexible' CHECK (budget_type IN ('flexible', 'fixed'))`
+  ).catch(() => {});
+}
+
 /* eslint-disable no-undef */
-if (process.env.DATABASE_URL) await runSchema();
+if (process.env.DATABASE_URL) {
+  await runSchema();
+  await runMigrations();
+}
 /* eslint-enable no-undef */
