@@ -11,6 +11,8 @@ import groupRoutes       from './routes/groups.js';
 import transactionRoutes from './routes/transactions.js';
 import budgetRoutes      from './routes/budgets.js';
 import categoryRoutes    from './routes/categories.js';
+import recurringRoutes   from './routes/recurring.js';
+import cronRoutes        from './routes/cron.js';
 
 /* eslint-disable no-undef */
 const PORT       = process.env.PORT || 3001;
@@ -81,6 +83,8 @@ app.use('/api/groups',       groupRoutes);
 app.use('/api',              transactionRoutes);
 app.use('/api/groups',       budgetRoutes);
 app.use('/api/me/categories', categoryRoutes);
+app.use('/api',              recurringRoutes);
+app.use('/api/cron',         cronRoutes);
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {

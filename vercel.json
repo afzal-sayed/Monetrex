@@ -2,5 +2,8 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.js" },
     { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    { "path": "/api/cron/process-recurring", "schedule": "5 0 * * *" }
   ]
 }

@@ -82,6 +82,7 @@ router.post('/change-password', authenticate, async (req, res) => {
 
 router.delete('/', authenticate, async (req, res) => {
   try {
+    await run('DELETE FROM recurring_rules WHERE member_id IN (SELECT id FROM memberships WHERE user_id = $1)', [req.userId]);
     await run('DELETE FROM users WHERE id = $1', [req.userId]);
     res.json({ ok: true });
   } catch (e) {

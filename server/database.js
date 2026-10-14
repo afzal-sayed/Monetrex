@@ -100,6 +100,22 @@ async function runSchema() {
       created_at TEXT DEFAULT to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
       UNIQUE(user_id, name)
     );
+    CREATE TABLE IF NOT EXISTS recurring_rules (
+      id TEXT PRIMARY KEY,
+      group_id TEXT NOT NULL,
+      member_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      amount REAL NOT NULL,
+      category TEXT NOT NULL DEFAULT 'General',
+      note TEXT DEFAULT '',
+      frequency TEXT NOT NULL CHECK (frequency IN ('weekly','biweekly','monthly','yearly')),
+      start_date TEXT NOT NULL,
+      next_due TEXT NOT NULL,
+      end_date TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_by TEXT NOT NULL,
+      created_at TEXT DEFAULT to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+    );
   `);
 }
 
@@ -108,6 +124,12 @@ async function runMigrations() {
   await pool.query(
     `ALTER TABLE budgets ADD COLUMN IF NOT EXISTS budget_type VARCHAR(10) NOT NULL DEFAULT 'flexible' CHECK (budget_type IN ('flexible', 'fixed'))`
   ).catch(() => {});
+  await pool.query('ALTER TABLE transactions ADD COLUMN IF NOT EXISTS recurring_rule_id TEXT')
+    .catch((e) => console.error('recurring_rule_id migration failed:', e.message));
+  await pool.query(
+    `CREATE UNIQUE INDEX IF NOT EXISTS transactions_rule_date_uq
+     ON transactions (recurring_rule_id, date) WHERE recurring_rule_id IS NOT NULL`
+  ).catch((e) => console.error('transactions_rule_date_uq migration failed:', e.message));
 }
 
 /* eslint-disable no-undef */

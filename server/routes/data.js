@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query } from '../database.js';
 import { createDefaultGroup } from '../helpers.js';
+import { processDueRules, listRulesForUser } from '../recurring.js';
 import { authenticate } from '../middleware/authenticate.js';
 
 const router = Router();
@@ -18,6 +19,12 @@ router.get('/', authenticate, async (req, res) => {
       const [user] = await query('SELECT * FROM users WHERE id = $1', [req.userId]);
       const groupId = await createDefaultGroup(req.userId, user.name, user.email);
       groupIds = [groupId];
+    }
+
+    try {
+      await processDueRules({ groupIds });
+    } catch (e) {
+      console.error('Recurring catch-up failed:', e);
     }
 
     const groups = await query(
@@ -60,7 +67,8 @@ router.get('/', authenticate, async (req, res) => {
       'SELECT * FROM custom_categories WHERE user_id = $1 ORDER BY created_at ASC',
       [req.userId]
     );
-    res.json({ groups, memberships, transactions, budgets, customCategories });
+    const recurringRules = await listRulesForUser(req.userId, groupIds);
+    res.json({ groups, memberships, transactions, budgets, customCategories, recurringRules });
   } catch (e) {
     console.error('Data fetch error:', e);
     res.status(500).json({ error: 'Failed to load data' });
