@@ -6,8 +6,14 @@ import { Toggle } from '../ui/Toggle';
 import { useAppContext } from '../../context/useAppContext';
 import { IndianRupee, Tag, FileText, Loader2, Users, CalendarDays, StickyNote, RefreshCw, X } from 'lucide-react';
 import { mergeCategories } from '../../utils/helpers';
+import { RecurringFields } from './RecurringFields';
 
 const today = () => new Date().toISOString().split('T')[0];
+const yearAgo = () => {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - 365);
+  return d.toISOString().split('T')[0];
+};
 
 const emptyForm = (family, incomeType = false) => ({
   title:       '',
@@ -17,10 +23,15 @@ const emptyForm = (family, incomeType = false) => ({
   note:        '',
   date:        today(),
   isRecurring: false,
+  frequency:   'monthly',
+  endDate:     '',
 });
 
-export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
-  const { addTransaction, updateTransaction, family, customCategories, addCustomCategory } = useAppContext();
+export const AddExpenseModal = ({ isOpen, onClose, initialData = null, ruleMode = false }) => {
+  const {
+    addTransaction, updateTransaction, family, customCategories, addCustomCategory,
+    createRecurringRule, fetchData, isAdmin, currentMembership,
+  } = useAppContext();
   const [form,    setForm]    = useState(() => emptyForm(family));
   const [type,    setType]    = useState('expense');
   const [loading, setLoading] = useState(false);
@@ -44,6 +55,8 @@ export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
         note:        initialData.note        || '',
         date:        initialData.date        || today(),
         isRecurring: Boolean(initialData.is_recurring),
+        frequency:   'monthly',
+        endDate:     '',
       });
       setType(txnType);
     } else {
@@ -82,7 +95,20 @@ export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
     };
 
     try {
-      if (initialData) {
+      if (creatingRule) {
+        const ok = await createRecurringRule({
+          title:     form.title.trim(),
+          amount:    numericAmount,
+          category:  form.category,
+          note:      form.note.trim(),
+          memberId:  isAdmin ? (form.memberId || undefined) : currentMembership?.id,
+          frequency: form.frequency,
+          startDate: form.date,
+          endDate:   form.endDate || null,
+        });
+        if (!ok) return;
+        await fetchData();
+      } else if (initialData) {
         await updateTransaction(initialData.id, payload);
       } else {
         await addTransaction(payload);
@@ -111,9 +137,16 @@ export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
     if (errors[key]) setErrors((e) => { const n = { ...e }; delete n[key]; return n; });
   };
 
+  const creatingRule = !initialData && (ruleMode || form.isRecurring);
+
   let title = 'Add Income';
-  if (initialData) title = 'Edit Transaction';
+  if (ruleMode) title = 'New Recurring Rule';
+  else if (initialData) title = 'Edit Transaction';
   else if (type === 'expense') title = 'Add Expense';
+
+  let submitLabel = 'Add Transaction';
+  if (initialData) submitLabel = 'Save Changes';
+  else if (creatingRule) submitLabel = 'Create Rule';
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
@@ -164,8 +197,9 @@ export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
             required
           />
           <Input
-            label="Date" icon={CalendarDays}
+            label={creatingRule ? 'Start date' : 'Date'} icon={CalendarDays}
             type="date"
+            min={creatingRule ? yearAgo() : undefined}
             value={form.date}
             onChange={(e) => set('date', e.target.value)}
           />
@@ -231,7 +265,7 @@ export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
         </div>
 
         {/* Member selector */}
-        {family.length > 0 && (
+        {family.length > 0 && (isAdmin || !creatingRule) && (
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1 flex items-center gap-2">
               <Users size={14} /> Assign to
@@ -271,16 +305,25 @@ export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
         </div>
 
         {/* Recurring toggle */}
-        <div className="flex items-start justify-between px-1 gap-4">
-          <div className="flex items-start gap-2">
-            <RefreshCw size={14} className="text-slate-500 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm text-slate-700 dark:text-slate-300">Mark as recurring</p>
-              <p className="text-[11px] text-slate-400 leading-tight mt-0.5">Tags this entry as a repeating cost — does not auto-create future transactions.</p>
+        {!ruleMode && (
+          <div className="flex items-start justify-between px-1 gap-4">
+            <div className="flex items-start gap-2">
+              <RefreshCw size={14} className="text-slate-500 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm text-slate-700 dark:text-slate-300">Mark as recurring</p>
+                <p className="text-[11px] text-slate-400 leading-tight mt-0.5">
+                  {initialData
+                    ? 'Tags this entry as a repeating cost.'
+                    : 'Adds this automatically on a schedule.'}
+                </p>
+              </div>
             </div>
+            <Toggle checked={form.isRecurring} onChange={(v) => set('isRecurring', v)} />
           </div>
-          <Toggle checked={form.isRecurring} onChange={(v) => set('isRecurring', v)} />
-        </div>
+        )}
+        {creatingRule && (
+          <RecurringFields frequency={form.frequency} endDate={form.endDate} onChange={set} />
+        )}
 
         {/* Actions */}
         <div className="flex justify-end gap-3 pt-2">
@@ -288,7 +331,7 @@ export const AddExpenseModal = ({ isOpen, onClose, initialData = null }) => {
           <Button type="submit" variant="primary" disabled={loading}>
             {loading
               ? <><Loader2 size={15} className="animate-spin mr-1.5" /> Saving…</>
-              : initialData ? 'Save Changes' : 'Add Transaction'}
+              : submitLabel}
           </Button>
         </div>
       </form>

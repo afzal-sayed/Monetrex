@@ -9,6 +9,7 @@ export const useDataSlice = ({ showToast }) => {
   const [budgetTypes,   setBudgetTypes]   = useState({});
   const [activeGroupId,     setActiveGroupId]     = useState(() => localStorage.getItem(GROUP_KEY) || null);
   const [customCategories,  setCustomCategories]  = useState([]);
+  const [recurringRules,    setRecurringRules]    = useState([]);
 
   // ── Persist active group ──────────────────────────────────────────────────
   useEffect(() => {
@@ -24,6 +25,7 @@ export const useDataSlice = ({ showToast }) => {
     setBudgetTypes({});
     setActiveGroupId(null);
     setCustomCategories([]);
+    setRecurringRules([]);
   }, []);
 
   // ── Transactions ──────────────────────────────────────────────────────────
@@ -125,6 +127,7 @@ export const useDataSlice = ({ showToast }) => {
         setFamily((prev)       => prev.filter((m) => m.group_id !== groupId));
         setTransactions((prev) => prev.filter((t) => t.group_id !== groupId));
         setBudgets((prev)      => { const n = { ...prev }; delete n[groupId]; return n; });
+        setRecurringRules((prev) => prev.filter((r) => r.group_id !== groupId));
       } else {
         setFamily((prev) => prev.filter((m) => !(m.group_id === groupId && m.user_id === userId)));
       }
@@ -233,6 +236,49 @@ export const useDataSlice = ({ showToast }) => {
     }
   };
 
+  // ── Recurring rules ───────────────────────────────────────────────────────
+  const createRecurringRule = async (rule) => {
+    if (!activeGroupId) { showToast('No active group selected', 'error'); return false; }
+    try {
+      const res  = await apiFetch(`/groups/${activeGroupId}/recurring`, { method: 'POST', body: JSON.stringify(rule) });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || 'Failed to create recurring rule', 'error'); return false; }
+      setRecurringRules((prev) => [...prev, data.rule]);
+      showToast('Recurring rule created!');
+      return true;
+    } catch {
+      showToast('Failed to create recurring rule', 'error');
+      return false;
+    }
+  };
+
+  const updateRecurringRule = async (id, updates) => {
+    try {
+      const res  = await apiFetch(`/recurring/${id}`, { method: 'PATCH', body: JSON.stringify(updates) });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || 'Failed to update rule', 'error'); return false; }
+      setRecurringRules((prev) => prev.map((r) => (r.id === id ? data.rule : r)));
+      showToast('Rule updated!');
+      return true;
+    } catch {
+      showToast('Failed to update rule', 'error');
+      return false;
+    }
+  };
+
+  const deleteRecurringRule = async (id) => {
+    try {
+      const res = await apiFetch(`/recurring/${id}`, { method: 'DELETE' });
+      if (!res.ok) { const d = await res.json(); showToast(d.error || 'Failed to delete rule', 'error'); return false; }
+      setRecurringRules((prev) => prev.filter((r) => r.id !== id));
+      showToast('Rule deleted', 'info');
+      return true;
+    } catch {
+      showToast('Failed to delete rule', 'error');
+      return false;
+    }
+  };
+
   return {
     // raw state + setters (used by AppProvider for fetchData + derived state)
     transactions, setTransactions,
@@ -242,6 +288,7 @@ export const useDataSlice = ({ showToast }) => {
     budgetTypes,  setBudgetTypes,
     activeGroupId, setActiveGroupId,
     customCategories, setCustomCategories,
+    recurringRules, setRecurringRules,
     clearAll,
     // public CRUD
     addTransaction, updateTransaction, deleteTransaction, deleteTransactions,
@@ -249,5 +296,6 @@ export const useDataSlice = ({ showToast }) => {
     addFamilyMember, removeFamilyMember,
     updateBudgets,
     addCustomCategory, deleteCustomCategory,
+    createRecurringRule, updateRecurringRule, deleteRecurringRule,
   };
 };

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Receipt, PieChart, Users, Settings, LogOut, Wallet, TrendingUp, TrendingDown, Target } from 'lucide-react';
+import { LayoutDashboard, Receipt, PieChart, Users, Settings, LogOut, Wallet, TrendingUp, TrendingDown, Target, Repeat } from 'lucide-react';
 import { useAppContext } from '../../context/useAppContext';
 
 const navItems = [
@@ -8,6 +8,7 @@ const navItems = [
   { name: 'Transactions', path: '/transactions', icon: Receipt         },
   { name: 'Analytics',    path: '/analytics',    icon: PieChart        },
   { name: 'Budgets',      path: '/budgets',      icon: Target          },
+  { name: 'Recurring',    path: '/recurring',    icon: Repeat          },
   { name: 'Family',       path: '/family',       icon: Users           },
   { name: 'Settings',     path: '/settings',     icon: Settings        },
 ];
