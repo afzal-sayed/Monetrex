@@ -6,6 +6,7 @@ import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 import { useAppContext } from '../context/useAppContext';
 import { CATEGORY_EMOJI, CATEGORY_COLORS } from '../utils/helpers';
+import { resolveMonthBudget } from '../utils/budgetResolve';
 import BudgetVsActualChart from '../components/charts/BudgetVsActualChart';
 
 const STATUS_COLORS = {
@@ -168,15 +169,17 @@ export const Budgets = () => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const monthBudgets = useMemo(() => {
-    const groupBudgets = budgetsRaw[activeGroupId] || {};
-    return groupBudgets[selectedMonth] || groupBudgets['default'] || {};
-  }, [budgetsRaw, activeGroupId, selectedMonth]);
+  const resolved = useMemo(
+    () => resolveMonthBudget(budgetsRaw[activeGroupId], selectedMonth),
+    [budgetsRaw, activeGroupId, selectedMonth]
+  );
+  const monthBudgets = resolved.data;
+  const carriedFrom  = resolved.key && resolved.key !== selectedMonth ? resolved.key : null;
 
   const monthBudgetTypes = useMemo(() => {
     const groupTypes = (budgetTypesRaw || {})[activeGroupId] || {};
-    return groupTypes[selectedMonth] || groupTypes['default'] || {};
-  }, [budgetTypesRaw, activeGroupId, selectedMonth]);
+    return groupTypes[resolved.key] || {};
+  }, [budgetTypesRaw, activeGroupId, resolved.key]);
 
   const categorySpending = useMemo(() =>
     transactions
@@ -240,9 +243,9 @@ export const Budgets = () => {
     const currentType = monthBudgetTypes[category] || 'flexible';
     const newType = currentType === 'fixed' ? 'flexible' : 'fixed';
     await updateBudgets(
-      { [category]: budget },
+      { ...monthBudgets, [category]: budget },
       selectedMonth,
-      { [category]: newType }
+      { ...monthBudgetTypes, [category]: newType }
     );
     setTogglingCat(null);
   };
@@ -347,6 +350,12 @@ export const Budgets = () => {
           </button>
         )}
       </div>
+
+      {carriedFrom && carriedFrom !== 'default' && (
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Budgets carried over from {toLabel(carriedFrom)}. Editing here sets them for {toLabel(selectedMonth)} onward.
+        </p>
+      )}
 
       {/* Empty state */}
       {budgetItems.length === 0 && (
