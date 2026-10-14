@@ -71,6 +71,7 @@ router.delete('/:groupId/leave', authenticate, async (req, res) => {
     if (!membership) return res.status(404).json({ error: 'You are not a member of this group' });
 
     if (membership.role === 'Owner') {
+      await run('DELETE FROM recurring_rules WHERE group_id = $1', [groupId]);
       await run('DELETE FROM budgets      WHERE group_id = $1', [groupId]);
       await run('DELETE FROM transactions WHERE group_id = $1', [groupId]);
       await run('DELETE FROM memberships  WHERE group_id = $1', [groupId]);
@@ -78,6 +79,7 @@ router.delete('/:groupId/leave', authenticate, async (req, res) => {
       return res.json({ ok: true, deleted: true });
     }
 
+    await run('DELETE FROM recurring_rules WHERE member_id = $1', [membership.id]);
     await run('DELETE FROM memberships WHERE id = $1', [membership.id]);
     res.json({ ok: true, deleted: false });
   } catch (e) {
@@ -162,6 +164,7 @@ router.delete('/:groupId/members/:memberId', authenticate, async (req, res) => {
       return res.status(403).json({ error: 'Admins cannot remove other admins' });
     }
 
+    await run('DELETE FROM recurring_rules WHERE member_id = $1', [memberId]);
     await run('DELETE FROM memberships WHERE id = $1', [memberId]);
     res.json({ ok: true });
   } catch (e) {

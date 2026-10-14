@@ -142,6 +142,7 @@ Edit `.env`:
 ```env
 JWT_SECRET=any-long-random-string
 CSRF_SECRET=another-long-random-string
+CRON_SECRET=yet-another-long-random-string
 DATABASE_URL=postgresql://postgres.xxxx:password@aws-0-region.pooler.supabase.com:5432/postgres
 PGSSL_INSECURE=1
 ALLOWED_ORIGINS=http://localhost:5173,http://localhost:4173
@@ -175,6 +176,7 @@ In Vercel → Project Settings → Environment Variables, add:
 |---|---|
 | `JWT_SECRET` | A long random secret |
 | `CSRF_SECRET` | A different long random secret |
+| `CRON_SECRET` | Another long random secret; required for the daily recurring-transactions cron |
 | `DATABASE_URL` | Supabase Session Pooler URI (port 5432) |
 | `ALLOWED_ORIGINS` | Your Vercel URL, e.g. `https://monetrex.vercel.app` |
 | `APP_URL` | Same Vercel URL (used in password reset emails) |

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -190,6 +191,12 @@ export const Transactions = () => {
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">View and manage all financial activity</p>
         </div>
         <div className="flex gap-2 shrink-0">
+          <Link to="/recurring">
+            <Button variant="glass" className="gap-2">
+              <Repeat size={15} />
+              <span className="hidden sm:inline">Recurring</span>
+            </Button>
+          </Link>
           <div className="relative" ref={exportRef}>
             <Button variant="glass" className="gap-2" onClick={() => setShowExport((v) => !v)}>
               <Download size={15} />

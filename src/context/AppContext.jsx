@@ -26,10 +26,12 @@ export const AppProvider = ({ children }) => {
     budgetTypes, setBudgetTypes,
     activeGroupId, setActiveGroupId, clearAll,
     customCategories, setCustomCategories,
+    recurringRules, setRecurringRules,
     addTransaction, updateTransaction, deleteTransaction, deleteTransactions,
     createGroup, switchGroup, renameGroup, leaveGroup: leaveGroupRaw,
     addFamilyMember, removeFamilyMember, updateBudgets,
     addCustomCategory, deleteCustomCategory,
+    createRecurringRule, updateRecurringRule, deleteRecurringRule,
   } = data;
 
   // ── Fetch all app data ────────────────────────────────────────────────────
@@ -66,13 +68,14 @@ export const AppProvider = ({ children }) => {
       setBudgets(budgetMap);
       setBudgetTypes(budgetTypesMap);
       setCustomCategories(d.customCategories || []);
+      setRecurringRules(d.recurringRules || []);
     } catch (e) {
       if (import.meta.env.DEV) console.error('fetchData error:', e);
       showToast('Failed to load data. Is the server running?', 'error');
     } finally {
       setIsLoading(false);
     }
-  }, [showToast, setIsLoading, setUser, setGroups, setFamily, setTransactions, setBudgets, setBudgetTypes, setCustomCategories, clearAll]);
+  }, [showToast, setIsLoading, setUser, setGroups, setFamily, setTransactions, setBudgets, setBudgetTypes, setCustomCategories, setRecurringRules, clearAll]);
 
   useEffect(() => {
     if (authReady && user) fetchData();
@@ -129,6 +132,11 @@ export const AppProvider = ({ children }) => {
     const groupTypes = budgetTypes[activeGroupId] || {};
     return groupTypes[budgetSource] || {};
   }, [budgetTypes, activeGroupId, budgetSource]);
+
+  const activeRecurringRules = useMemo(
+    () => recurringRules.filter((r) => r.group_id === activeGroupId),
+    [recurringRules, activeGroupId]
+  );
 
   const monthlyData = useMemo(
     () => computeMonthlyData(visibleTransactions),
@@ -221,6 +229,8 @@ export const AppProvider = ({ children }) => {
       // Loading / Toast
       isLoading, toasts, showToast,
       fetchData,
+      recurringRules: activeRecurringRules,
+      createRecurringRule, updateRecurringRule, deleteRecurringRule,
     }}>
       {children}
     </AppContext.Provider>
