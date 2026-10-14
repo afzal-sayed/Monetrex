@@ -1,6 +1,7 @@
 import React, { createContext, useEffect, useCallback, useMemo } from 'react';
 import { computeMonthlyData } from '../utils/helpers';
 import { apiFetch, fetchCsrfToken, GROUP_KEY } from '../utils/api';
+import { resolveMonthBudget } from '../utils/budgetResolve';
 import { useUISlice }   from './slices/useUISlice';
 import { useAuthSlice } from './slices/useAuthSlice';
 import { useDataSlice } from './slices/useDataSlice';
@@ -116,17 +117,18 @@ export const AppProvider = ({ children }) => {
     return groupTxns.filter((t) => t.member_id === currentMembership?.id);
   }, [transactions, user, activeGroupId, isAdmin, currentMembership]);
 
-  // Budgets: current month → fallback to 'default'
   const currentMonth = new Date().toISOString().slice(0, 7);
-  const activeBudgets = useMemo(() => {
-    const groupBudgets = budgets[activeGroupId] || {};
-    return groupBudgets[currentMonth] || groupBudgets['default'] || {};
-  }, [budgets, activeGroupId, currentMonth]);
+  const activeResolved = useMemo(
+    () => resolveMonthBudget(budgets[activeGroupId], currentMonth),
+    [budgets, activeGroupId, currentMonth]
+  );
+  const activeBudgets = activeResolved.data;
+  const budgetSource  = activeResolved.key;
 
   const activeBudgetTypes = useMemo(() => {
     const groupTypes = budgetTypes[activeGroupId] || {};
-    return groupTypes[currentMonth] || groupTypes['default'] || {};
-  }, [budgetTypes, activeGroupId, currentMonth]);
+    return groupTypes[budgetSource] || {};
+  }, [budgetTypes, activeGroupId, budgetSource]);
 
   const monthlyData = useMemo(
     () => computeMonthlyData(visibleTransactions),
@@ -205,6 +207,7 @@ export const AppProvider = ({ children }) => {
       // Budgets
       budgets: activeBudgets, updateBudgets,
       budgetsRaw: budgets,
+      budgetSource,
       budgetTypes: activeBudgetTypes,
       budgetTypesRaw: budgetTypes,
       currentMonth,

@@ -70,7 +70,7 @@ const PasswordSection = () => {
 
 // ─── Budget Goals Section ───────────────────────────────────────────────────
 const BudgetSection = () => {
-  const { budgets, updateBudgets, fetchData, isAdmin, activeGroupId, currentMonth, customCategories } = useAppContext();
+  const { budgets, budgetSource, updateBudgets, fetchData, isAdmin, activeGroupId, currentMonth, customCategories } = useAppContext();
 
   // rows = [{ cat, amt }] — only categories that have a budget
   const [rows,   setRows]   = useState(() =>
@@ -138,6 +138,11 @@ const BudgetSection = () => {
       <p className="text-sm text-slate-500 dark:text-slate-400">
         Monthly spending limits for <span className="font-semibold text-slate-700 dark:text-slate-300">{currentMonth}</span>. Categories without a limit are uncapped.
       </p>
+      {budgetSource && budgetSource !== 'default' && budgetSource !== currentMonth && (
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Carried over from {budgetSource}. Saving here sets these limits for {currentMonth} onward.
+        </p>
+      )}
 
       {/* Existing budget rows */}
       {rows.length > 0 ? (
