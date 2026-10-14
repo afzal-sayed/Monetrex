@@ -72,3 +72,6 @@ test-*.png
 
 # Dev tooling scratch
 .superpowers/
+
+# Local-only specs and plans
+docs/
